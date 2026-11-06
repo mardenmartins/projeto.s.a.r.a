@@ -578,315 +578,35 @@ main {
 </footer>
 </div>
 
-<!-- ═══════════════ SCRIPTS ═══════════════ -->
+<!-- SCRIPTS S.A.R.A / SUPABASE -->
 <script src="db.js"></script>
 <script>
-/* ── Guarda no estado da página ── */
-let produtoAtual = null;
-let scannerAtivo = false;
-let html5QrCode  = null;
-
-/* ── Inicialização ── */
-exigirLogin();
-
-window.addEventListener('DOMContentLoaded', () => {
-  const sessao = sessaoAtual();
-  if (sessao) {
-    document.getElementById('nav-nome').textContent = sessao.usuario;
-    document.getElementById('nav-avatar').textContent = sessao.usuario[0].toUpperCase();
-  }
-  atualizarTudo();
+let produtoAtual=null,scannerAtivo=false,html5QrCode=null;
+const $=id=>document.getElementById(id);
+function esc(v){return String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+window.addEventListener('DOMContentLoaded',async()=>{
+ if(!await exigirLogin())return;
+ const sessao=sessaoAtual();if(sessao){$('nav-nome').textContent=sessao.usuario;$('nav-avatar').textContent=sessao.usuario[0].toUpperCase()}
+ await atualizarTudo();
 });
-
-function atualizarTudo() {
-  atualizarStats();
-  renderizarProdutos();
-  renderizarLogs();
-}
-
-/* ── Logout ── */
-function fazerLogout() {
-  pararScanner();
-  logout();
-  window.location.href = 'login.html';
-}
-
-/* ── Stats ── */
-function atualizarStats() {
-  const s = estatisticas();
-  document.getElementById('s-total').textContent        = s.totalProdutos;
-  document.getElementById('s-vendidos').textContent     = s.totalVendidos;
-  document.getElementById('s-verificacoes').textContent = s.totalVerificacoes;
-  document.getElementById('s-fraudes').textContent      = s.totalFraudes;
-}
-
-/* ═══════════════════════════════════════════════
-   GERAR PRODUTO
-════════════════════════════════════════════════ */
-function gerarProduto() {
-  produtoAtual = registrarNovoProduto();
-  renderizarQR(produtoAtual.qrcode);
-  renderizarInfoGerador(produtoAtual);
-  document.getElementById('gen-result').classList.add('show');
-  document.getElementById('btn-vender').style.display = 'inline-flex';
-  atualizarTudo();
-}
-
-function renderizarQR(codigo) {
-  const container = document.getElementById('qr-canvas');
-  container.innerHTML = '';
-  new QRCode(container, {
-    text: codigo,
-    width: 106,
-    height: 106,
-    colorDark: '#000000',
-    colorLight: '#ffffff',
-    correctLevel: QRCode.CorrectLevel.M,
-  });
-}
-
-function renderizarInfoGerador(p) {
-  document.getElementById('gen-nome').textContent   = p.nome;
-  document.getElementById('gen-codigo').textContent = p.qrcode;
-  document.getElementById('gen-marca').textContent  = p.marca;
-  document.getElementById('gen-lote').textContent   = p.lote;
-  document.getElementById('gen-origem').textContent = p.origem;
-  document.getElementById('gen-status').innerHTML   = p.vendido
-    ? '<span class="status-pill status-vendido">✓ Vendido</span>'
-    : '<span class="status-pill status-registrado">◉ Registrado</span>';
-}
-
-function marcarComoVendido() {
-  if (!produtoAtual) return;
-  const atualizado = registrarVenda(produtoAtual.qrcode);
-  if (atualizado) {
-    produtoAtual = atualizado;
-    renderizarInfoGerador(atualizado);
-    atualizarTudo();
-  }
-}
-
-function copiarCodigo() {
-  if (!produtoAtual) return;
-  navigator.clipboard.writeText(produtoAtual.qrcode).then(() => {
-    const btn = event.target.closest('button');
-    const original = btn.innerHTML;
-    btn.textContent = '✓ Copiado!';
-    setTimeout(() => { btn.innerHTML = original; }, 1800);
-  });
-}
-
-function verificarCodigoAtual() {
-  if (!produtoAtual) return;
-  document.getElementById('input-codigo').value = produtoAtual.qrcode;
-  setModo('digitar');
-  verificarManual();
-  document.getElementById('result-wrap').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-}
-
-/* ═══════════════════════════════════════════════
-   SCANNER DE CÂMERA
-════════════════════════════════════════════════ */
-function setModo(modo) {
-  pararScanner();
-  document.getElementById('mode-camera').style.display  = modo === 'camera'  ? 'block' : 'none';
-  document.getElementById('mode-digitar').style.display = modo === 'digitar' ? 'block' : 'none';
-  document.getElementById('tab-camera').classList.toggle('active', modo === 'camera');
-  document.getElementById('tab-digitar').classList.toggle('active', modo === 'digitar');
-  document.getElementById('result-wrap').classList.remove('show');
-}
-
-function iniciarScanner() {
-  if (scannerAtivo) return;
-  html5QrCode = new Html5Qrcode('reader');
-  const config = { fps: 10, qrbox: { width: 250, height: 250 } };
-
-  html5QrCode.start(
-    { facingMode: 'environment' }, // câmera traseira no celular, webcam no PC
-    config,
-    (codigoDecodificado) => {
-      pararScanner();
-      processarResultado(verificarCodigo(codigoDecodificado));
-    },
-    () => {} // silencia erros de frame sem QR Code
-  ).then(() => {
-    scannerAtivo = true;
-    document.getElementById('btn-iniciar-scan').style.display = 'none';
-    document.getElementById('btn-parar-scan').style.display   = 'inline-flex';
-  }).catch((err) => {
-    alert('Não foi possível acessar a câmera. Verifique as permissões do navegador.\n\n' + err);
-  });
-}
-
-function pararScanner() {
-  if (html5QrCode && scannerAtivo) {
-    html5QrCode.stop().catch(() => {});
-    scannerAtivo = false;
-    document.getElementById('btn-iniciar-scan').style.display = 'inline-flex';
-    document.getElementById('btn-parar-scan').style.display   = 'none';
-  }
-}
-
-/* ═══════════════════════════════════════════════
-   VERIFICAÇÃO MANUAL (digitação)
-════════════════════════════════════════════════ */
-function verificarManual() {
-  const codigo = document.getElementById('input-codigo').value;
-  const resultado = verificarCodigo(codigo);
-  processarResultado(resultado);
-  atualizarTudo();
-}
-
-/* ═══════════════════════════════════════════════
-   EXIBIÇÃO DO RESULTADO
-════════════════════════════════════════════════ */
-function processarResultado(r) {
-  atualizarTudo();
-  const wrap  = document.getElementById('result-wrap');
-  const icon  = document.getElementById('result-icon');
-  const titulo = document.getElementById('result-titulo');
-  const msg   = document.getElementById('result-msg');
-  const grid  = document.getElementById('result-grid');
-
-  // Limpa classes anteriores
-  wrap.className = 'result-wrap show';
-  wrap.classList.add(r.resultado);
-
-  const configs = {
-    original: {
-      emoji: '✅', iconClass: 'ok',
-      titulo: 'Produto Autêntico',
-    },
-    nao_vendido: {
-      emoji: 'ℹ️', iconClass: 'info',
-      titulo: 'Produto Registrado (não vendido ainda)',
-    },
-    nao_encontrado: {
-      emoji: '❌', iconClass: 'warn',
-      titulo: 'Código Não Encontrado',
-    },
-    fraude: {
-      emoji: '⚠️', iconClass: 'warn',
-      titulo: 'ALERTA — Possível Fraude Detectada',
-    },
-    erro: {
-      emoji: '❓', iconClass: 'warn',
-      titulo: 'Erro na verificação',
-    },
-  };
-
-  const cfg = configs[r.resultado] || configs.erro;
-  icon.textContent = cfg.emoji;
-  icon.className   = `result-icon ${cfg.iconClass}`;
-  titulo.textContent = cfg.titulo;
-  msg.textContent    = r.mensagem;
-
-  // Monta campos extras se houver produto
-  grid.innerHTML = '';
-  if (r.produto) {
-    const p = r.produto;
-    const campos = [
-      { k: 'Produto',    v: p.nome },
-      { k: 'Marca',      v: p.marca },
-      { k: 'Categoria',  v: p.categoria },
-      { k: 'Lote',       v: p.lote },
-      { k: 'Fabricação', v: formatarData(p.dataFabricacao) },
-      { k: 'Origem',     v: p.origem },
-    ];
-    if (p.vendido) {
-      campos.push({ k: 'Data da venda', v: formatarData(p.dataVenda) });
-      campos.push({ k: 'Local da venda', v: p.localVenda });
-    }
-    campos.push({ k: 'Código QR', v: `<span class="result-code">${p.qrcode}</span>` });
-
-    campos.forEach(c => {
-      grid.innerHTML += `<div class="result-field"><span class="k">${c.k}</span><span class="v">${c.v}</span></div>`;
-    });
-  }
-}
-
-/* ═══════════════════════════════════════════════
-   RENDERIZAÇÃO DE LISTA DE PRODUTOS
-════════════════════════════════════════════════ */
-const EMOJI_CATEGORIA = {
-  'Perfumes': '🌸', 'Medicamentos': '💊', 'Luxo': '💎',
-  'Eletrônicos': '📱', 'Bebidas': '🍷', 'Cosméticos': '💄', 'Autopeças': '⚙️',
-};
-
-function renderizarProdutos() {
-  const lista   = listarProdutos();
-  const el      = document.getElementById('prod-list');
-
-  if (!lista.length) {
-    el.innerHTML = `<div class="empty-state"><div class="big">📦</div>Nenhum produto ainda. Clique em "Gerar produto aleatório" para começar.</div>`;
-    return;
-  }
-
-  el.innerHTML = lista.slice(0, 20).map(p => `
-    <div class="prod-row">
-      <div class="prod-cat">${EMOJI_CATEGORIA[p.categoria] || '📦'}</div>
-      <div class="prod-info">
-        <div class="prod-nome-row">${p.nome}</div>
-        <div class="prod-sub-row">${p.qrcode} · ${p.marca}</div>
-      </div>
-      <div class="prod-status">
-        ${p.vendido
-          ? '<span class="status-pill status-vendido">✓ Vendido</span>'
-          : '<span class="status-pill status-registrado">◉ Registrado</span>'}
-      </div>
-      <button class="prod-verify-btn" onclick="verificarRapido('${p.qrcode}')">Verificar</button>
-    </div>
-  `).join('');
-}
-
-function verificarRapido(codigo) {
-  document.getElementById('input-codigo').value = codigo;
-  setModo('digitar');
-  verificarManual();
-  document.querySelector('.scanner-wrap').scrollIntoView({ behavior: 'smooth', block: 'start' });
-}
-
-/* ═══════════════════════════════════════════════
-   RENDERIZAÇÃO DE LOGS
-════════════════════════════════════════════════ */
-const RESULTADO_LABEL = {
-  original:       'Original autenticado',
-  fraude:         'Alerta de fraude',
-  nao_vendido:    'Registrado, não vendido',
-  nao_encontrado: 'Código não encontrado',
-};
-
-function renderizarLogs() {
-  const logs = listarLogs();
-  const el   = document.getElementById('log-list');
-
-  if (!logs.length) {
-    el.innerHTML = `<div class="empty-state"><div class="big">📋</div>Nenhuma verificação registrada ainda.</div>`;
-    return;
-  }
-
-  el.innerHTML = logs.slice(0, 30).map(l => `
-    <div class="log-row">
-      <span class="log-dot ${l.resultado}"></span>
-      <span class="log-code">${l.qrcode}</span>
-      <span class="log-res">${RESULTADO_LABEL[l.resultado] || l.resultado}</span>
-      <span class="log-hora">${formatarDataHora(l.dataHora)}</span>
-    </div>
-  `).join('');
-}
-
-/* ═══════════════════════════════════════════════
-   UTILITÁRIOS
-════════════════════════════════════════════════ */
-function formatarData(iso) {
-  if (!iso) return '—';
-  return new Date(iso).toLocaleDateString('pt-BR', { day:'2-digit', month:'2-digit', year:'numeric' });
-}
-function formatarDataHora(iso) {
-  if (!iso) return '—';
-  return new Date(iso).toLocaleTimeString('pt-BR', { hour:'2-digit', minute:'2-digit', second:'2-digit' });
-}
+async function atualizarTudo(){try{await atualizarStats();await renderizarProdutos();await renderizarLogs()}catch(e){console.error(e);alert('Erro ao carregar dados do Supabase: '+e.message)}}
+async function fazerLogout(){pararScanner();await logout();location.href='login.html'}
+async function atualizarStats(){const x=await estatisticas();$('s-total').textContent=x.totalProdutos;$('s-vendidos').textContent=x.totalVendidos;$('s-verificacoes').textContent=x.totalVerificacoes;$('s-fraudes').textContent=x.totalFraudes}
+async function gerarProduto(){const b=$('btn-gerar');b.disabled=true;try{produtoAtual=await registrarNovoProduto();renderizarQR(produtoAtual.qrcode);renderizarInfoGerador(produtoAtual);$('gen-result').classList.add('show');$('btn-vender').style.display='inline-flex';await atualizarTudo()}catch(e){alert('Não foi possível registrar o produto: '+e.message)}finally{b.disabled=false}}
+function renderizarQR(codigo){const container=$('qr-canvas');container.innerHTML='';const base=location.href.substring(0,location.href.lastIndexOf('/')+1);new QRCode(container,{text:base+'verificar.html?codigo='+encodeURIComponent(codigo),width:106,height:106,colorDark:'#000000',colorLight:'#ffffff',correctLevel:QRCode.CorrectLevel.M})}
+function renderizarInfoGerador(p){$('gen-nome').textContent=p.nome;$('gen-codigo').textContent=p.qrcode;$('gen-marca').textContent=p.marca;$('gen-lote').textContent=p.lote;$('gen-origem').textContent=p.origem;$('gen-status').innerHTML=p.vendido?'<span class="status-pill status-vendido">✓ Vendido</span>':'<span class="status-pill status-registrado">◉ Registrado</span>'}
+async function marcarComoVendido(){if(!produtoAtual)return;try{produtoAtual=await registrarVenda(produtoAtual.qrcode,'Loja Demonstração — PDV 01',null,'Demonstração');renderizarInfoGerador(produtoAtual);await atualizarTudo()}catch(e){alert(e.message)}}
+function copiarCodigo(){if(produtoAtual)navigator.clipboard.writeText(produtoAtual.qrcode).then(()=>alert('Código copiado!'))}
+async function verificarCodigoAtual(){if(!produtoAtual)return;$('input-codigo').value=produtoAtual.qrcode;setModo('digitar');await verificarManual();$('result-wrap').scrollIntoView({behavior:'smooth',block:'nearest'})}
+function setModo(modo){pararScanner();$('mode-camera').style.display=modo==='camera'?'block':'none';$('mode-digitar').style.display=modo==='digitar'?'block':'none';$('tab-camera').classList.toggle('active',modo==='camera');$('tab-digitar').classList.toggle('active',modo==='digitar');$('result-wrap').classList.remove('show')}
+async function iniciarScanner(){if(scannerAtivo)return;html5QrCode=new Html5Qrcode('reader');try{await html5QrCode.start({facingMode:'environment'},{fps:10,qrbox:{width:250,height:250}},async value=>{pararScanner();try{processarResultado(await verificarCodigo(value));await atualizarTudo()}catch(e){alert(e.message)}},()=>{});scannerAtivo=true;$('btn-iniciar-scan').style.display='none';$('btn-parar-scan').style.display='inline-flex'}catch(e){alert('Não foi possível acessar a câmera. Verifique as permissões do navegador.\n\n'+e)}}
+function pararScanner(){if(html5QrCode&&scannerAtivo){html5QrCode.stop().catch(()=>{});scannerAtivo=false;$('btn-iniciar-scan').style.display='inline-flex';$('btn-parar-scan').style.display='none'}}
+async function verificarManual(){try{processarResultado(await verificarCodigo($('input-codigo').value));await atualizarTudo()}catch(e){processarResultado({resultado:'erro',mensagem:e.message})}}
+function processarResultado(r){const wrap=$('result-wrap'),icon=$('result-icon'),titulo=$('result-titulo'),msg=$('result-msg'),grid=$('result-grid');wrap.className='result-wrap show';wrap.classList.add(r.resultado);const cfg=({original:{emoji:'✅',iconClass:'ok',titulo:'Produto Autêntico'},nao_vendido:{emoji:'ℹ️',iconClass:'info',titulo:'Produto Registrado (não vendido ainda)'},nao_encontrado:{emoji:'❌',iconClass:'warn',titulo:'Código Não Encontrado'},fraude:{emoji:'⚠️',iconClass:'warn',titulo:'ALERTA — Possível Fraude Detectada'},erro:{emoji:'❓',iconClass:'warn',titulo:'Erro na verificação'}})[r.resultado]||{emoji:'❓',iconClass:'warn',titulo:'Erro'};icon.textContent=cfg.emoji;icon.className='result-icon '+cfg.iconClass;titulo.textContent=cfg.titulo;msg.textContent=r.mensagem;grid.innerHTML='';if(r.produto){const p=r.produto,campos=[['Produto',p.nome],['Marca',p.marca],['Categoria',p.categoria],['Lote',p.lote],['Fabricação',formatarData(p.dataFabricacao)],['Origem',p.origem]];if(p.vendido)campos.push(['Data da venda',formatarData(p.dataVenda)],['Local da venda',p.localVenda]);campos.push(['Código QR',p.qrcode]);grid.innerHTML=campos.map(([k,v])=>'<div class="result-field"><span class="k">'+esc(k)+'</span><span class="v">'+esc(v)+'</span></div>').join('')}}
+const EMOJI_CATEGORIA={'Perfumes':'🌸','Medicamentos':'💊','Luxo':'💎','Eletrônicos':'📱','Bebidas':'🍷','Cosméticos':'💄','Autopeças':'⚙️'};
+async function renderizarProdutos(){const lista=await listarProdutos(),el=$('prod-list');if(!lista.length){el.innerHTML='<div class="empty-state"><div class="big">📦</div>Nenhum produto ainda. Clique em "Gerar produto aleatório" para começar.</div>';return}el.innerHTML=lista.slice(0,20).map(p=>'<div class="prod-row"><div class="prod-cat">'+(EMOJI_CATEGORIA[p.categoria]||'📦')+'</div><div class="prod-info"><div class="prod-nome-row">'+esc(p.nome)+'</div><div class="prod-sub-row">'+esc(p.qrcode)+' · '+esc(p.marca)+'</div></div><div class="prod-status">'+(p.vendido?'<span class="status-pill status-vendido">✓ Vendido</span>':'<span class="status-pill status-registrado">◉ Registrado</span>')+'</div><button class="prod-verify-btn" onclick="verificarRapido(\''+esc(p.qrcode)+'\')">Verificar</button></div>').join('')}
+async function verificarRapido(codigo){$('input-codigo').value=codigo;setModo('digitar');await verificarManual();document.querySelector('.scanner-wrap').scrollIntoView({behavior:'smooth',block:'start'})}
+const RESULTADO_LABEL={original:'Original autenticado',fraude:'Alerta de fraude',nao_vendido:'Registrado, não vendido',nao_encontrado:'Código não encontrado'};
+async function renderizarLogs(){const logs=await listarLogs(),el=$('log-list');if(!logs.length){el.innerHTML='<div class="empty-state"><div class="big">📋</div>Nenhuma verificação registrada ainda.</div>';return}el.innerHTML=logs.slice(0,30).map(l=>'<div class="log-row"><span class="log-dot '+esc(l.resultado)+'"></span><span class="log-code">'+esc(l.qrcode)+'</span><span class="log-res">'+esc(RESULTADO_LABEL[l.resultado]||l.resultado)+'</span><span class="log-hora">'+formatarDataHora(l.dataHora)+'</span></div>').join('')}
 </script>
-
-</body>
-</html>
+</body></html>
