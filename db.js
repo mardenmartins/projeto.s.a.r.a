@@ -66,6 +66,11 @@ async function exigirLogin(){
 function gerarCodigoAleatorio(){const a=new Uint8Array(16);crypto.getRandomValues(a);return 'SARA-'+new Date().getFullYear()+'-'+Array.from(a).map(x=>x.toString(16).padStart(2,'0')).join('').toUpperCase()}
 function gerarLote(){const d=new Date();return 'LT-'+d.getFullYear()+String(d.getMonth()+1).padStart(2,'0')+'-'+String(Math.floor(Math.random()*999)+1).padStart(3,'0')}
 function normalizarCodigo(c){let v=(c||'').trim();try{const u=new URL(v);v=u.searchParams.get('codigo')||u.searchParams.get('qrcode')||u.pathname.split('/').pop()||v}catch{}return v.trim().toUpperCase()}
+async function registrarLoteProdutos(nome,marca,categoria,origem,lote,quantidade){
+  return await saraRequest('/rest/v1/rpc/sara_registrar_lote_produtos',{method:'POST',body:JSON.stringify({
+    p_nome:nome,p_marca:marca,p_categoria:categoria,p_origem:origem,p_lote:lote,p_quantidade:Number(quantidade)
+  })});
+}
 async function registrarNovoProduto(){
   const b=CATALOGO_PRODUTOS[Math.floor(Math.random()*CATALOGO_PRODUTOS.length)];
   const q=gerarCodigoAleatorio(), lote=gerarLote();
