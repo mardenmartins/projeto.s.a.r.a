@@ -58,7 +58,7 @@ async function exigirLogin(){
   if(s.expires_at && s.expires_at*1000<Date.now()+30000){s=await saraRefreshSession()}
   if(!s?.access_token){location.href='login.html';return false}
   try{
-    const p=await saraRequest('/rest/v1/perfis?select=nome,papel,ativo&user_id=eq.'+encodeURIComponent(s.user.id));
+    const p=await saraRequest('/rest/v1/perfis?select=nome,papel,ativo,fabrica_id&user_id=eq.'+encodeURIComponent(s.user.id));
     if(!p?.length||!p[0].ativo) throw new Error('Perfil sem acesso');
     s.perfil=p[0];saraSalvarSessao(s);return true;
   }catch{await logout();location.href='login.html';return false}
