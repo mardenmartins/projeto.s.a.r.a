@@ -207,8 +207,8 @@ form { display: flex; flex-direction: column; gap: 18px; }
       </div>
 
       <div class="login-foot">
-        <span class="badge" style="font-size:10px;padding:4px 10px">Demo local</span>
-        dados salvos apenas neste navegador
+        <span class="badge" style="font-size:10px;padding:4px 10px">Supabase</span>
+        autenticação e dados sincronizados na nuvem
       </div>
     </div>
 
@@ -216,14 +216,14 @@ form { display: flex; flex-direction: column; gap: 18px; }
     <div class="login-form-panel">
       <div class="eyebrow">Acesso restrito</div>
       <h2>Entrar no sistema</h2>
-      <p class="sub">Use as credenciais de demonstração para acessar o painel.</p>
+      <p class="sub">Entre com seu e-mail e senha cadastrados no Supabase.</p>
 
       <form id="form-login" autocomplete="off">
         <div class="field">
-          <label class="field-label" for="usuario">Usuário</label>
+          <label class="field-label" for="usuario">E-mail</label>
           <div class="field-input-wrap">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-            <input class="field-input" type="text" id="usuario" placeholder="admin" autocomplete="username">
+            <input class="field-input" type="email" id="usuario" placeholder="seu@email.com" autocomplete="username" required>
           </div>
         </div>
 
@@ -231,7 +231,7 @@ form { display: flex; flex-direction: column; gap: 18px; }
           <label class="field-label" for="senha">Senha</label>
           <div class="field-input-wrap">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="4" y="11" width="16" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>
-            <input class="field-input" type="password" id="senha" placeholder="••••••••" autocomplete="current-password">
+            <input class="field-input" type="password" id="senha" placeholder="Sua senha" autocomplete="current-password" required>
           </div>
         </div>
 
@@ -244,7 +244,7 @@ form { display: flex; flex-direction: column; gap: 18px; }
 
         <div class="login-hint">
           <span>🔑</span>
-          <span>Credenciais de demonstração — usuário <span class="mono">admin</span> · senha <span class="mono">admin123</span></span>
+          <span>Acesso restrito a usuários previamente cadastrados e autorizados pelo administrador.</span>
         </div>
       </form>
     </div>
@@ -254,28 +254,18 @@ form { display: flex; flex-direction: column; gap: 18px; }
 
 <script src="db.js"></script>
 <script>
-// Se já existe sessão ativa, vai direto para o painel
-if (sessaoAtual()) {
-  window.location.href = 'sistema.html';
-}
-
-document.getElementById('form-login').addEventListener('submit', function (e) {
-  e.preventDefault();
-  const usuario = document.getElementById('usuario').value;
-  const senha   = document.getElementById('senha').value;
-  const erroEl  = document.getElementById('erro-login');
-
-  if (autenticar(usuario, senha)) {
-    erroEl.textContent = '';
-    window.location.href = 'sistema.html';
-  } else {
-    erroEl.textContent = 'Usuário ou senha incorretos. Tente admin / admin123.';
-  }
+if (sessaoAtual()) location.href='sistema.html';
+document.getElementById('form-login').addEventListener('submit',async function(e){
+ e.preventDefault();
+ const email=document.getElementById('usuario').value;
+ const senha=document.getElementById('senha').value;
+ const erro=document.getElementById('erro-login');
+ const botao=this.querySelector('button[type="submit"]');
+ erro.textContent='';botao.disabled=true;botao.textContent='Autenticando...';
+ try{await autenticar(email,senha);location.href='sistema.html'}
+ catch(err){erro.textContent=err.message||'Não foi possível entrar.';botao.disabled=false;botao.textContent='Entrar'}
 });
-
-requestAnimationFrame(() => {
-  document.querySelector('.login-grid').classList.add('visible');
-});
+requestAnimationFrame(()=>document.querySelector('.login-grid').classList.add('visible'));
 </script>
 </body>
 </html>
