@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Verificar produto — S.A.R.A.</title><link rel="stylesheet" href="style.css">
+<style>
+.wrap{max-width:760px;margin:0 auto;padding:120px 22px 60px}.card{padding:32px}.eyebrow{color:var(--accent);font-size:12px;letter-spacing:.12em;text-transform:uppercase}.status{padding:20px;border:1px solid var(--border);border-radius:14px;margin-top:22px}.status.original{border-color:rgba(0,229,160,.4);background:rgba(0,229,160,.06)}.status.fraude,.status.nao_encontrado{border-color:rgba(255,68,68,.4);background:rgba(255,68,68,.06)}.status.nao_vendido{border-color:rgba(100,160,255,.4);background:rgba(100,160,255,.06)}.status h2{margin:0 0 8px}.grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:20px}.field{padding:12px;background:var(--bg3);border-radius:10px}.field small{display:block;color:var(--muted);font-size:11px;text-transform:uppercase}.field strong{display:block;margin-top:4px;word-break:break-word}.code{font-family:var(--mono);color:var(--accent)}@media(max-width:600px){.grid{grid-template-columns:1fr}.card{padding:22px}}
+</style></head>
+<body>
+<nav><a class="nav-logo" href="index.html">S.A.R.A. <span>/ Verificação</span></a><div class="nav-user"><a class="nav-logout" href="index.html">Página inicial</a></div></nav>
+<main class="wrap"><section class="card">
+<div class="eyebrow">Consulta pública de autenticidade</div><h1 style="margin:10px 0">Verifique seu produto</h1>
+<p class="muted">O resultado consulta os registros de fabricação, venda e verificações armazenados no S.A.R.A.</p>
+<div id="resultado" class="status"><p>Consultando o código...</p></div>
+<div id="detalhes" class="grid"></div>
+<p class="muted" style="font-size:12px;margin-top:22px">A indicação de possível fraude representa um conflito no histórico do QR Code e deve ser investigada. A leitura isolada não constitui prova definitiva de falsificação.</p>
+</section></main>
+<script src="db.js"></script><script>
+const $=id=>document.getElementById(id);
+function esc(v){return String(v??'—').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+async function consultarPublico(){
+ const codigo=new URLSearchParams(location.search).get('codigo')||'';
+ if(!codigo){$('resultado').className='status nao_encontrado';$('resultado').innerHTML='<h2>Código não informado</h2><p>O QR Code não contém um identificador para consulta.</p>';return}
+ try{
+  const r=await verificarCodigo(codigo);
+  const cfg={original:['Produto autêntico','O registro indica que este produto foi cadastrado e sua venda foi confirmada.'],nao_vendido:['Produto registrado','Este produto está cadastrado, mas ainda não possui venda registrada.'],fraude:['Alerta: possível clonagem','Este código já foi verificado anteriormente após a venda. Procure o estabelecimento ou a marca responsável.'],nao_encontrado:['Código não encontrado','Não localizamos este identificador na base do S.A.R.A.']};
+  const c=cfg[r.resultado]||['Não foi possível verificar',r.mensagem||'Tente novamente mais tarde.'];
+  $('resultado').className='status '+r.resultado;$('resultado').innerHTML='<h2>'+esc(c[0])+'</h2><p>'+esc(c[1])+'</p><p class="code" style="margin-top:12px">'+esc(r.codigo||codigo)+'</p>';
+  if(r.produto){const p=r.produto,fields=[['Produto',p.nome],['Marca',p.marca],['Categoria',p.categoria],['Lote',p.lote],['Origem',p.origem],['Fabricação',formatarData(p.dataFabricacao)]];
+   if(p.vendido)fields.push(['Venda registrada',formatarDataHora(p.dataVenda)],['Estabelecimento',p.localVenda]);
+   $('detalhes').innerHTML=fields.map(([k,v])=>'<div class="field"><small>'+esc(k)+'</small><strong>'+esc(v)+'</strong></div>').join('');
+  }
+ }catch(e){$('resultado').className='status nao_encontrado';$('resultado').innerHTML='<h2>Serviço indisponível</h2><p>'+esc(e.message)+'</p>'}
+}
+consultarPublico();
+</script></body></html>
