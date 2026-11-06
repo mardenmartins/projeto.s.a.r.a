@@ -41,7 +41,7 @@ async function autenticar(email,senha){
   if(!r.ok) throw new Error(d.msg||d.message||'E-mail ou senha incorretos.');
   saraSalvarSessao(d);
   try{
-    const perfil=await saraRequest('/rest/v1/perfis?select=nome,papel,ativo&user_id=eq.'+encodeURIComponent(d.user.id));
+    const perfil=await saraRequest('/rest/v1/perfis?select=nome,papel,ativo,fabrica_id&user_id=eq.'+encodeURIComponent(d.user.id));
     if(!perfil?.length||!perfil[0].ativo){await logout();throw new Error('Usuário autenticado, mas sem perfil ativo no S.A.R.A. Solicite liberação ao administrador.')}
     d.perfil=perfil[0]; saraSalvarSessao(d);
   }catch(e){await logout();throw e}
@@ -66,6 +66,22 @@ async function exigirLogin(){
 function gerarCodigoAleatorio(){const a=new Uint8Array(16);crypto.getRandomValues(a);return 'SARA-'+new Date().getFullYear()+'-'+Array.from(a).map(x=>x.toString(16).padStart(2,'0')).join('').toUpperCase()}
 function gerarLote(){const d=new Date();return 'LT-'+d.getFullYear()+String(d.getMonth()+1).padStart(2,'0')+'-'+String(Math.floor(Math.random()*999)+1).padStart(3,'0')}
 function normalizarCodigo(c){let v=(c||'').trim();try{const u=new URL(v);v=u.searchParams.get('codigo')||u.searchParams.get('qrcode')||u.pathname.split('/').pop()||v}catch{}return v.trim().toUpperCase()}
+async function cadastrarFuncionario(nome,email){
+  const s=saraSessao();
+  const r=await fetch(SARA_SUPABASE_URL+'/functions/v1/sara-cadastrar-funcionario',{
+    method:'POST',
+    headers:{apikey:SARA_SUPABASE_KEY,Authorization:'Bearer '+(s?.access_token||''),'Content-Type':'application/json'},
+    body:JSON.stringify({nome,email})
+  });
+  const d=await r.json().catch(()=>({}));
+  if(!r.ok) throw new Error(d.error||d.message||'Não foi possível cadastrar o funcionário.');
+  return d;
+}
+async function listarFuncionarios(){
+  const s=saraSessao(),f=s?.perfil?.fabrica_id;
+  if(!f) return [];
+  return await saraRequest('/rest/v1/perfis?select=user_id,nome,papel,ativo,criado_em&fabrica_id=eq.'+encodeURIComponent(f)+'&order=criado_em.asc');
+}
 async function registrarLoteProdutos(nome,marca,categoria,origem,lote,quantidade){
   return await saraRequest('/rest/v1/rpc/sara_registrar_lote_produtos',{method:'POST',body:JSON.stringify({
     p_nome:nome,p_marca:marca,p_categoria:categoria,p_origem:origem,p_lote:lote,p_quantidade:Number(quantidade)
