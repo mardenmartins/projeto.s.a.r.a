@@ -254,6 +254,13 @@ main {
   transition: border-color .2s;
 }
 .prod-row:hover { border-color: var(--border-strong); }
+.prod-row-com-qr{align-items:center;gap:16px}
+.prod-qr-thumb{width:104px;height:104px;flex:0 0 104px;background:#fff;border-radius:8px;padding:5px;display:flex;align-items:center;justify-content:center}
+.prod-qr-thumb canvas,.prod-qr-thumb img{width:94px!important;height:94px!important;display:block}
+.prod-qr-actions{display:flex;flex-direction:column;align-items:flex-end;gap:8px;flex-shrink:0}
+.prod-qr-actions .status-pill{white-space:nowrap}
+@media(max-width:700px){.prod-row-com-qr{flex-wrap:wrap}.prod-qr-thumb{width:88px;height:88px;flex-basis:88px}.prod-qr-thumb canvas,.prod-qr-thumb img{width:78px!important;height:78px!important}.prod-qr-actions{width:100%;flex-direction:row;align-items:center;flex-wrap:wrap}}
+
 .prod-cat {
   width: 36px; height: 36px;
   border-radius: 9px;
@@ -697,7 +704,31 @@ function pararScanner(){if(html5QrCode&&scannerAtivo){html5QrCode.stop().catch((
 async function verificarManual(){try{processarResultado(await verificarCodigo($('input-codigo').value));await atualizarTudo()}catch(e){processarResultado({resultado:'erro',mensagem:e.message})}}
 function processarResultado(r){const wrap=$('result-wrap'),icon=$('result-icon'),titulo=$('result-titulo'),msg=$('result-msg'),grid=$('result-grid');wrap.className='result-wrap show';wrap.classList.add(r.resultado);const cfg=({original:{emoji:'✅',iconClass:'ok',titulo:'Produto Autêntico'},nao_vendido:{emoji:'ℹ️',iconClass:'info',titulo:'Produto Registrado (não vendido ainda)'},nao_encontrado:{emoji:'❌',iconClass:'warn',titulo:'Código Não Encontrado'},fraude:{emoji:'⚠️',iconClass:'warn',titulo:'ALERTA — Possível Fraude Detectada'},erro:{emoji:'❓',iconClass:'warn',titulo:'Erro na verificação'}})[r.resultado]||{emoji:'❓',iconClass:'warn',titulo:'Erro'};icon.textContent=cfg.emoji;icon.className='result-icon '+cfg.iconClass;titulo.textContent=cfg.titulo;msg.textContent=r.mensagem;grid.innerHTML='';if(r.produto){const p=r.produto,campos=[['Produto',p.nome],['Marca',p.marca],['Categoria',p.categoria],['Lote',p.lote],['Fabricação',formatarData(p.dataFabricacao)],['Origem',p.origem]];if(p.vendido)campos.push(['Data da venda',formatarData(p.dataVenda)],['Local da venda',p.localVenda]);campos.push(['Código QR',p.qrcode]);grid.innerHTML=campos.map(([k,v])=>'<div class="result-field"><span class="k">'+esc(k)+'</span><span class="v">'+esc(v)+'</span></div>').join('')}}
 const EMOJI_CATEGORIA={'Perfumes':'🌸','Medicamentos':'💊','Luxo':'💎','Eletrônicos':'📱','Bebidas':'🍷','Cosméticos':'💄','Autopeças':'⚙️'};
-async function renderizarProdutos(){const lista=await listarProdutos(),el=$('prod-list');if(!lista.length){el.innerHTML='<div class="empty-state"><div class="big">📦</div>Nenhum produto ainda. Clique em "Gerar produto aleatório" para começar.</div>';return}el.innerHTML=lista.slice(0,20).map(p=>'<div class="prod-row"><div class="prod-cat">'+(EMOJI_CATEGORIA[p.categoria]||'📦')+'</div><div class="prod-info"><div class="prod-nome-row">'+esc(p.nome)+'</div><div class="prod-sub-row">'+esc(p.qrcode)+' · '+esc(p.marca)+'</div></div><div class="prod-status">'+(p.vendido?'<span class="status-pill status-vendido">✓ Vendido</span>':'<span class="status-pill status-registrado">◉ Registrado</span>')+'</div><button class="prod-verify-btn" onclick="verificarRapido(\''+esc(p.qrcode)+'\')">Verificar</button></div>').join('')}
+async function renderizarProdutos(){
+ const lista=await listarProdutos(),el=$('prod-list');
+ if(!lista.length){el.innerHTML='<div class="empty-state"><div class="big">📦</div>Nenhum produto ainda. Clique em "Gerar produto aleatório" para começar.</div>';return}
+ el.innerHTML='';
+ lista.slice(0,20).forEach((p,i)=>{
+  const row=document.createElement('article');row.className='prod-row prod-row-com-qr';
+  const qrBox=document.createElement('div');qrBox.className='prod-qr-thumb';qrBox.setAttribute('aria-label','QR Code de '+(p.nome||'produto'));
+  new QRCode(qrBox,{text:linkPublico(p.qrcode),width:112,height:112,colorDark:'#000000',colorLight:'#ffffff',correctLevel:QRCode.CorrectLevel.H});
+  const info=document.createElement('div');info.className='prod-info';
+  const nome=document.createElement('div');nome.className='prod-nome-row';nome.textContent=p.nome||'Produto';
+  const marca=document.createElement('div');marca.className='prod-sub-row';marca.textContent=(p.marca||'')+' · '+(p.categoria||'');
+  const lote=document.createElement('div');lote.className='prod-sub-row';lote.textContent='Lote: '+(p.lote||'—');
+  const codigo=document.createElement('div');codigo.className='prod-sub-row';codigo.textContent='QR: '+(p.qrcode||'');info.append(nome,marca,lote,codigo);
+  const actions=document.createElement('div');actions.className='prod-qr-actions';
+  const status=document.createElement('span');status.className='status-pill '+(p.vendido?'status-vendido':'status-registrado');status.textContent=p.vendido?'✓ Vendido':'◉ Registrado';
+  const link=document.createElement('a');link.className='prod-verify-btn';link.href=linkPublico(p.qrcode);link.target='_blank';link.rel='noopener';link.textContent='Verificar informações';
+  const download=document.createElement('button');download.type='button';download.className='prod-verify-btn';download.textContent='Baixar QR Code';
+  download.addEventListener('click',()=>{
+   const canvas=qrBox.querySelector('canvas'),img=qrBox.querySelector('img'),data=canvas?canvas.toDataURL('image/png'):img?.src;
+   if(!data){alert('Não foi possível gerar a imagem deste QR Code.');return}
+   const a=document.createElement('a');a.href=data;a.download='SARA-QR-'+p.qrcode+'.png';a.click();
+  });
+  actions.append(status,link,download);row.append(qrBox,info,actions);el.appendChild(row);
+ });
+}
 async function verificarRapido(codigo){$('input-codigo').value=codigo;setModo('digitar');await verificarManual();document.querySelector('.scanner-wrap').scrollIntoView({behavior:'smooth',block:'start'})}
 const RESULTADO_LABEL={original:'Original autenticado',fraude:'Alerta de fraude',nao_vendido:'Registrado, não vendido',nao_encontrado:'Código não encontrado'};
 async function renderizarLogs(){const logs=await listarLogs(),el=$('log-list');if(!logs.length){el.innerHTML='<div class="empty-state"><div class="big">📋</div>Nenhuma verificação registrada ainda.</div>';return}el.innerHTML=logs.slice(0,30).map(l=>'<div class="log-row"><span class="log-dot '+esc(l.resultado)+'"></span><span class="log-code">'+esc(l.qrcode)+'</span><span class="log-res">'+esc(RESULTADO_LABEL[l.resultado]||l.resultado)+'</span><span class="log-hora">'+formatarDataHora(l.dataHora)+'</span></div>').join('')}
