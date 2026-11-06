@@ -394,16 +394,25 @@ main {
   </div>
 
   <div class="qr-generator card">
-    <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:center;margin-bottom:4px">
-      <button class="btn btn-primary" id="btn-gerar" onclick="gerarProduto()">
+    <form id="form-lote" style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin-bottom:14px" onsubmit="event.preventDefault();gerarProduto()">
+      <label class="field">Nome do produto<input class="field-input" id="produto-nome" required placeholder="Ex.: Café torrado 500g"></label>
+      <label class="field">Marca<input class="field-input" id="produto-marca" required placeholder="Marca comercial"></label>
+      <label class="field">Categoria<input class="field-input" id="produto-categoria" required placeholder="Ex.: Alimentos"></label>
+      <label class="field">Origem / fabricante<input class="field-input" id="produto-origem" required placeholder="Cidade, estado ou fábrica"></label>
+      <label class="field">Lote<input class="field-input" id="produto-lote" required placeholder="Ex.: LT-2026-001"></label>
+      <label class="field">Quantidade de unidades<input class="field-input" id="produto-quantidade" type="number" min="1" max="10000" value="10" required></label>
+      <div style="grid-column:1/-1;display:flex;gap:12px;flex-wrap:wrap;align-items:center">
+      <button type="submit" class="btn btn-primary" id="btn-gerar">
         <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 2v2M12 20v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M2 12h2M20 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
-        Gerar produto aleatório
+        Cadastrar produto e gerar QR Codes individuais
       </button>
-      <button class="btn btn-outline btn-sm" onclick="marcarComoVendido()" id="btn-vender" style="display:none">
+      <button class="btn btn-outline btn-sm" type="button" onclick="marcarComoVendido()" id="btn-vender" style="display:none">
         <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
         Simular venda no PDV
       </button>
-    </div>
+      </div>
+    </form>
+    <div id="qr-lote-lista" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:12px;margin-top:18px"></div>
 
     <!-- Resultado do produto gerado -->
     <div class="gen-result" id="gen-result">
@@ -585,7 +594,7 @@ main {
 <!-- SCRIPTS S.A.R.A / SUPABASE -->
 <script src="db.js"></script>
 <script>
-let produtoAtual=null,scannerAtivo=false,html5QrCode=null;
+let produtoAtual=null,produtosGerados=[],scannerAtivo=false,html5QrCode=null;
 const $=id=>document.getElementById(id);
 function esc(v){return String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
 window.addEventListener('DOMContentLoaded',async()=>{
@@ -596,7 +605,26 @@ window.addEventListener('DOMContentLoaded',async()=>{
 async function atualizarTudo(){try{await atualizarStats();await renderizarProdutos();await renderizarLogs()}catch(e){console.error(e);alert('Erro ao carregar dados do Supabase: '+e.message)}}
 async function fazerLogout(){pararScanner();await logout();location.href='login.html'}
 async function atualizarStats(){const x=await estatisticas();$('s-total').textContent=x.totalProdutos;$('s-vendidos').textContent=x.totalVendidos;$('s-verificacoes').textContent=x.totalVerificacoes;$('s-fraudes').textContent=x.totalFraudes}
-async function gerarProduto(){const b=$('btn-gerar');b.disabled=true;try{produtoAtual=await registrarNovoProduto();renderizarQR(produtoAtual.qrcode);renderizarInfoGerador(produtoAtual);$('gen-result').classList.add('show');$('btn-vender').style.display='inline-flex';await atualizarTudo()}catch(e){alert('Não foi possível registrar o produto: '+e.message)}finally{b.disabled=false}}
+async function gerarProduto(){
+ const b=$('btn-gerar');b.disabled=true;
+ try{
+  const nome=$('produto-nome').value.trim(),marca=$('produto-marca').value.trim(),categoria=$('produto-categoria').value.trim(),origem=$('produto-origem').value.trim(),lote=$('produto-lote').value.trim(),quantidade=Number($('produto-quantidade').value);
+  produtosGerados=await registrarLoteProdutos(nome,marca,categoria,origem,lote,quantidade);
+  if(!Array.isArray(produtosGerados)||produtosGerados.length!==quantidade)throw new Error('O banco não retornou todos os QR Codes gerados.');
+  produtoAtual=produtosGerados[0];renderizarQR(produtoAtual.qrcode);renderizarInfoGerador(produtoAtual);$('gen-result').classList.add('show');$('btn-vender').style.display='inline-flex';
+  renderizarListaQR(produtosGerados);await atualizarTudo();
+  alert(produtosGerados.length+' QR Codes individuais gerados com sucesso.');
+ }catch(e){alert('Não foi possível registrar o lote: '+e.message)}finally{b.disabled=false}
+}
+function renderizarListaQR(lista){
+ const area=$('qr-lote-lista');area.innerHTML='';
+ lista.forEach((p,i)=>{
+  const card=document.createElement('div');card.style.cssText='background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:10px;text-align:center;min-width:0';
+  const qr=document.createElement('div');qr.style.cssText='background:#fff;padding:6px;width:116px;height:116px;margin:0 auto 8px';card.appendChild(qr);
+  new QRCode(qr,{text:linkPublico(p.qrcode),width:104,height:104,colorDark:'#000000',colorLight:'#ffffff',correctLevel:QRCode.CorrectLevel.H});
+  const label=document.createElement('div');label.style.cssText='font-size:11px;word-break:break-all;color:var(--muted)';label.textContent='Unidade '+(i+1)+' · '+p.qrcode;card.appendChild(label);area.appendChild(card);
+ });
+}
 function linkPublico(codigo){return new URL('verificar.html?codigo='+encodeURIComponent(codigo),location.href).href}
 function renderizarQR(codigo){const container=$('qr-canvas');container.innerHTML='';new QRCode(container,{text:linkPublico(codigo),width:440,height:440,colorDark:'#000000',colorLight:'#ffffff',correctLevel:QRCode.CorrectLevel.H})}
 function imagemQRCode(){const canvas=$('qr-canvas').querySelector('canvas');if(canvas)return canvas.toDataURL('image/png');const img=$('qr-canvas').querySelector('img');return img?.src||null}
