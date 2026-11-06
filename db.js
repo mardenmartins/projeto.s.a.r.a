@@ -84,3 +84,18 @@ async function listarLogs(){return await saraRequest('/rest/v1/rpc/sara_listar_l
 async function estatisticas(){return await saraRequest('/rest/v1/rpc/sara_estatisticas',{method:'POST',body:'{}'})}
 function formatarData(iso){if(!iso)return '—';return new Date(iso).toLocaleDateString('pt-BR')}
 function formatarDataHora(iso){if(!iso)return '—';return new Date(iso).toLocaleString('pt-BR')}
+
+// Cadastro público de clientes: o perfil 'cliente' é criado automaticamente por trigger no Supabase.
+async function cadastrarCliente(nome,email,senha){
+  const r=await fetch(SARA_SUPABASE_URL+'/auth/v1/signup',{method:'POST',headers:{apikey:SARA_SUPABASE_KEY,'Content-Type':'application/json'},body:JSON.stringify({email:email.trim(),password:senha,data:{nome:nome.trim()}})});
+  const d=await r.json();
+  if(!r.ok) throw new Error(d.msg||d.message||d.error_description||'Não foi possível criar a conta.');
+  if(d.access_token) saraSalvarSessao(d);
+  return {sessao:!!d.access_token,email:d.user?.email||email};
+}
+async function exigirPerfil(papeis){
+  if(!await exigirLogin()) return false;
+  const s=saraSessao();
+  if(!papeis.includes(s?.perfil?.papel)){location.href=s?.perfil?.papel==='cliente'?'cliente.html':'sistema.html';return false;}
+  return true;
+}
