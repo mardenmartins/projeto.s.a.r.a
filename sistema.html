@@ -448,7 +448,8 @@ main {
             <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
             Copiar código
           </button>
-          <button class="btn btn-outline btn-sm" onclick="baixarQRCode()">Baixar QR Code</button>
+          <button class="btn btn-outline btn-sm" onclick="baixarQRCode()">Baixar QR Code da unidade 1</button>
+          <button class="btn btn-outline btn-sm" onclick="baixarListaCodigos()">Baixar lista CSV</button>
           <button class="btn btn-outline btn-sm" onclick="imprimirEtiqueta()">Imprimir etiqueta</button>
           <button class="btn btn-outline btn-sm" onclick="copiarLinkPublico()">Copiar link público</button>
           <button class="btn btn-outline btn-sm" onclick="verificarCodigoAtual()">
@@ -630,7 +631,23 @@ function renderizarQR(codigo){const container=$('qr-canvas');container.innerHTML
 function imagemQRCode(){const canvas=$('qr-canvas').querySelector('canvas');if(canvas)return canvas.toDataURL('image/png');const img=$('qr-canvas').querySelector('img');return img?.src||null}
 function baixarQRCode(){if(!produtoAtual)return;const data=imagemQRCode();if(!data){alert('O QR Code ainda não foi gerado.');return}const a=document.createElement('a');a.href=data;a.download='SARA-QR-'+produtoAtual.qrcode+'.png';a.click()}
 function copiarLinkPublico(){if(!produtoAtual)return;navigator.clipboard.writeText(linkPublico(produtoAtual.qrcode)).then(()=>alert('Link público copiado!')).catch(()=>alert('Não foi possível copiar o link neste navegador.'))}
-function imprimirEtiqueta(){if(!produtoAtual)return;const data=imagemQRCode();if(!data){alert('O QR Code ainda não foi gerado.');return}const w=window.open('','_blank','width=520,height=650');if(!w){alert('Permita a abertura de janelas pop-up para imprimir a etiqueta.');return}w.document.write('<!doctype html><html lang="pt-BR"><meta charset="utf-8"><title>Etiqueta S.A.R.A.</title><style>body{font-family:Arial,sans-serif;text-align:center;padding:24px;color:#111}.label{border:1px solid #ddd;padding:20px;display:inline-block;max-width:340px}img{width:260px;height:260px}h2{font-size:18px;margin:8px 0}p{font-size:12px;word-break:break-all}@media print{body{padding:0}.label{border:0}}</style><div class="label"><h2>'+esc(produtoAtual.nome)+'</h2><img src="'+data+'"><p>Consulte a autenticidade e os dados do produto</p><p>'+esc(produtoAtual.qrcode)+'</p></div><script>window.onload=()=>window.print()<\/script></html>');w.document.close()}
+function baixarListaCodigos(){
+ if(!produtosGerados.length)return;
+ const linhas=[['Unidade','Produto','Marca','Lote','Codigo QR','Link publico'],...produtosGerados.map((p,i)=>[i+1,p.nome,p.marca,p.lote,p.qrcode,linkPublico(p.qrcode)])];
+ const csv='\\uFEFF'+linhas.map(row=>row.map(v=>'"'+String(v??'').replace(/"/g,'""')+'"').join(';')).join('\\r\\n');
+ const url=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8;'}));const a=document.createElement('a');a.href=url;a.download='SARA-lote-codigos.csv';a.click();URL.revokeObjectURL(url);
+}
+function imprimirEtiqueta(){
+ if(!produtosGerados.length){alert('Gere um lote antes de imprimir.');return}
+ const etiquetas=produtosGerados.map((p,i)=>{
+  const holder=document.createElement('div');holder.style.cssText='position:absolute;left:-99999px;top:0';document.body.appendChild(holder);
+  new QRCode(holder,{text:linkPublico(p.qrcode),width:440,height:440,colorDark:'#000000',colorLight:'#ffffff',correctLevel:QRCode.CorrectLevel.H});
+  const canvas=holder.querySelector('canvas');const img=canvas?canvas.toDataURL('image/png'):holder.querySelector('img')?.src;holder.remove();
+  return '<article class="label"><h2>'+esc(p.nome)+'</h2><img src="'+img+'"><p>Consulte a autenticidade e os dados do produto</p><p>Unidade '+(i+1)+' · '+esc(p.qrcode)+'</p></article>';
+ }).join('');
+ const w=window.open('','_blank','width=900,height=700');if(!w){alert('Permita pop-ups para imprimir.');return}
+ w.document.write('<!doctype html><html lang="pt-BR"><meta charset="utf-8"><title>Etiquetas S.A.R.A.</title><style>body{font-family:Arial;padding:12px;display:grid;grid-template-columns:repeat(3,1fr);gap:10px;color:#111}.label{border:1px dashed #aaa;padding:10px;text-align:center;break-inside:avoid}.label img{width:150px;height:150px}.label h2{font-size:14px;margin:4px}.label p{font-size:9px;word-break:break-all}@media print{body{padding:0}}</style>'+etiquetas+'<script>window.onload=()=>window.print()<\\/script></html>');w.document.close();
+}
 function renderizarInfoGerador(p){$('gen-nome').textContent=p.nome;$('gen-codigo').textContent=p.qrcode;$('gen-marca').textContent=p.marca;$('gen-lote').textContent=p.lote;$('gen-origem').textContent=p.origem;$('gen-status').innerHTML=p.vendido?'<span class="status-pill status-vendido">✓ Vendido</span>':'<span class="status-pill status-registrado">◉ Registrado</span>'}
 async function marcarComoVendido(){if(!produtoAtual)return;try{produtoAtual=await registrarVenda(produtoAtual.qrcode,'Loja Demonstração — PDV 01',null,'Demonstração');renderizarInfoGerador(produtoAtual);await atualizarTudo()}catch(e){alert(e.message)}}
 function copiarCodigo(){if(produtoAtual)navigator.clipboard.writeText(produtoAtual.qrcode).then(()=>alert('Código copiado!'))}
