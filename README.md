@@ -408,3 +408,34 @@ Desenvolvido por
 **5º SENAC INNOVADAY · 2026**
 
 </div>
+
+
+---
+
+## Banco de dados Supabase
+
+O MVP utiliza Supabase Auth e PostgreSQL por meio da API REST, sem servidor Node.js/Java próprio.
+
+### Configuração inicial
+
+1. Abra o projeto Supabase conectado ao repositório.
+2. Execute as migrations `sara_initial_database`, `fix_profile_policy_recursion`, `tighten_sara_permissions_and_indexes` e `restrict_rpc_function_execution` (já aplicadas ao projeto conectado).
+3. Crie os usuários em Authentication → Users.
+4. Cadastre um perfil para cada usuário autorizado. Para o primeiro administrador, execute no SQL Editor:
+
+```sql
+insert into public.perfis (user_id, nome, papel)
+values ('UUID_DO_USUARIO_AUTH', 'Administrador S.A.R.A.', 'admin');
+```
+
+Para operadores, use `papel = 'operador'`. Não habilite cadastro público irrestrito de perfis.
+
+### Arquitetura
+
+- `db.js`: autenticação e chamadas REST/RPC do Supabase.
+- `sistema.html`: cadastro de produtos, QR, painel e histórico de verificações.
+- `pdv.html`: consulta de produto e registro atômico de venda.
+- `verificar.html?codigo=...`: consulta pública do QR Code.
+- Tabelas: `perfis`, `produtos`, `registros_venda`, `registros_verificacao`.
+
+Apenas a chave publishable/anon é usada no navegador. Nunca publique service_role ou secret keys.
