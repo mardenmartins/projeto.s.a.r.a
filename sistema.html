@@ -356,7 +356,21 @@ main {
 
 <!-- ── Conteúdo principal ── -->
 <div class="page-wrap">
-<main>
+<main>\n
+  <section id="secao-funcionarios" class="card" style="display:none;margin-bottom:28px">
+    <div class="section-header" style="margin-bottom:12px">
+      <div class="section-icon">👥</div>
+      <div><div class="section-title">Funcionários da fábrica</div><div class="section-sub">Cadastre colaboradores para acessar o S.A.R.A. da Perfumaria LTDA</div></div>
+    </div>
+    <form id="form-funcionario" style="display:grid;grid-template-columns:1fr 1fr auto;gap:12px;align-items:end">
+      <div class="field"><label class="field-label" for="func-nome">Nome completo</label><input class="field-input" id="func-nome" maxlength="120" required placeholder="Nome do funcionário"></div>
+      <div class="field"><label class="field-label" for="func-email">E-mail corporativo</label><input class="field-input" id="func-email" type="email" required placeholder="funcionario@empresa.com"></div>
+      <button class="btn btn-primary" id="btn-funcionario" type="submit">+ Cadastrar funcionário</button>
+    </form>
+    <p id="func-feedback" style="font-size:13px;color:var(--muted);margin:12px 0"></p>
+    <div id="lista-funcionarios" class="prod-list"><div class="empty-state">Carregando funcionários...</div></div>
+  </section>
+
 
   <!-- Stats -->
   <div class="stats-bar" id="stats-bar">
