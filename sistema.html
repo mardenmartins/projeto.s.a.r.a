@@ -614,9 +614,34 @@ const $=id=>document.getElementById(id);
 function esc(v){return String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
 window.addEventListener('DOMContentLoaded',async()=>{
  if(!await exigirLogin())return;
- const sessao=sessaoAtual();if(sessao){$('nav-nome').textContent=sessao.usuario;$('nav-avatar').textContent=sessao.usuario[0].toUpperCase()}
+ const sessao=saraSessao(),perfil=sessao?.perfil;
+ if(sessao){const nome=perfil?.nome||sessao.usuario;$('nav-nome').textContent=nome;$('nav-avatar').textContent=nome[0].toUpperCase()}
+ if(perfil?.papel==='admin_fabrica'){
+   $('secao-funcionarios').style.display='block';
+   await atualizarFuncionarios();
+   $('form-funcionario').addEventListener('submit',cadastrarFuncionarioTela);
+ }
  await atualizarTudo();
 });
+async function atualizarFuncionarios(){
+ try{
+  const pessoas=await listarFuncionarios(),el=$('lista-funcionarios');
+  const equipe=pessoas.filter(p=>p.papel==='operador'||p.papel==='admin_fabrica');
+  if(!equipe.length){el.innerHTML='<div class="empty-state">Nenhum funcionário cadastrado ainda.</div>';return}
+  el.innerHTML=equipe.map(p=>'<div class="prod-row"><div class="prod-cat">👤</div><div class="prod-info"><div class="prod-nome-row">'+esc(p.nome)+'</div><div class="prod-sub-row">'+esc(p.papel==='admin_fabrica'?'Administrador da fábrica':'Operador')+' · '+esc(p.ativo?'Ativo':'Inativo')+'</div></div><span class="status-pill '+(p.ativo?'status-vendido':'status-registrado')+'">'+(p.ativo?'Ativo':'Inativo')+'</span></div>').join('');
+ }catch(e){$('lista-funcionarios').innerHTML='<div class="empty-state">Não foi possível carregar a equipe: '+esc(e.message)+'</div>'}
+}
+async function cadastrarFuncionarioTela(e){
+ e.preventDefault();const b=$('btn-funcionario'),feedback=$('func-feedback');
+ b.disabled=true;b.textContent='Enviando convite...';feedback.textContent='';
+ try{
+  const nome=$('func-nome').value.trim(),email=$('func-email').value.trim();
+  const r=await cadastrarFuncionario(nome,email);
+  feedback.textContent='Convite enviado para '+r.email+'. O funcionário deverá acessar o link recebido por e-mail e definir sua senha.';
+  $('form-funcionario').reset();await atualizarFuncionarios();
+ }catch(err){feedback.textContent='Não foi possível cadastrar: '+err.message}
+ finally{b.disabled=false;b.textContent='+ Cadastrar funcionário'}
+}
 async function atualizarTudo(){try{await atualizarStats();await renderizarProdutos();await renderizarLogs()}catch(e){console.error(e);alert('Erro ao carregar dados do Supabase: '+e.message)}}
 async function fazerLogout(){pararScanner();await logout();location.href='login.html'}
 async function atualizarStats(){const x=await estatisticas();$('s-total').textContent=x.totalProdutos;$('s-vendidos').textContent=x.totalVendidos;$('s-verificacoes').textContent=x.totalVerificacoes;$('s-fraudes').textContent=x.totalFraudes}
