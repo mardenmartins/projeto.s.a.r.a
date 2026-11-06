@@ -140,13 +140,15 @@ function registrarNovoProduto() {
 }
 
 /* Simula a passagem do produto pelo caixa do lojista (Status: Vendido) */
-function registrarVenda(codigo, localVenda) {
+function registrarVenda(codigo, localVenda, valorVenda, vendedor) {
   const db = dbLer();
   const produto = db.produtos.find(p => p.qrcode === codigo);
-  if (!produto) return null;
+  if (!produto || produto.vendido) return null;
   produto.vendido = true;
   produto.dataVenda = new Date().toISOString();
   produto.localVenda = localVenda || 'Loja Demonstração — PDV 01';
+  produto.valorVenda = Number(valorVenda) || null;
+  produto.vendedor = vendedor || null;
   dbSalvar(db);
   return produto;
 }
