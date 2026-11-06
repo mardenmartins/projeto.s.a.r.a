@@ -98,15 +98,16 @@ main {
 }
 .gen-result.show { display: flex; }
 
-.qr-img-wrap {
+ .qr-img-wrap {
   background: #fff;
   border-radius: 10px;
   padding: 12px;
   flex-shrink: 0;
-  width: 130px; height: 130px;
+  width: 244px; height: 244px;
   display: flex; align-items: center; justify-content: center;
 }
-#qr-canvas { width: 106px; height: 106px; }
+#qr-canvas { width: 220px; height: 220px; }
+#qr-canvas canvas, #qr-canvas img { width: 220px !important; height: 220px !important; display:block; }
 
 .gen-info { flex: 1; min-width: 0; }
 .gen-info .prod-nome {
@@ -438,6 +439,9 @@ main {
             <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
             Copiar código
           </button>
+          <button class="btn btn-outline btn-sm" onclick="baixarQRCode()">Baixar QR Code</button>
+          <button class="btn btn-outline btn-sm" onclick="imprimirEtiqueta()">Imprimir etiqueta</button>
+          <button class="btn btn-outline btn-sm" onclick="copiarLinkPublico()">Copiar link público</button>
           <button class="btn btn-outline btn-sm" onclick="verificarCodigoAtual()">
             <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
             Verificar este produto
@@ -593,7 +597,12 @@ async function atualizarTudo(){try{await atualizarStats();await renderizarProdut
 async function fazerLogout(){pararScanner();await logout();location.href='login.html'}
 async function atualizarStats(){const x=await estatisticas();$('s-total').textContent=x.totalProdutos;$('s-vendidos').textContent=x.totalVendidos;$('s-verificacoes').textContent=x.totalVerificacoes;$('s-fraudes').textContent=x.totalFraudes}
 async function gerarProduto(){const b=$('btn-gerar');b.disabled=true;try{produtoAtual=await registrarNovoProduto();renderizarQR(produtoAtual.qrcode);renderizarInfoGerador(produtoAtual);$('gen-result').classList.add('show');$('btn-vender').style.display='inline-flex';await atualizarTudo()}catch(e){alert('Não foi possível registrar o produto: '+e.message)}finally{b.disabled=false}}
-function renderizarQR(codigo){const container=$('qr-canvas');container.innerHTML='';const base=location.href.substring(0,location.href.lastIndexOf('/')+1);new QRCode(container,{text:base+'verificar.html?codigo='+encodeURIComponent(codigo),width:106,height:106,colorDark:'#000000',colorLight:'#ffffff',correctLevel:QRCode.CorrectLevel.M})}
+function linkPublico(codigo){return new URL('verificar.html?codigo='+encodeURIComponent(codigo),location.href).href}
+function renderizarQR(codigo){const container=$('qr-canvas');container.innerHTML='';new QRCode(container,{text:linkPublico(codigo),width:440,height:440,colorDark:'#000000',colorLight:'#ffffff',correctLevel:QRCode.CorrectLevel.H})}
+function imagemQRCode(){const canvas=$('qr-canvas').querySelector('canvas');if(canvas)return canvas.toDataURL('image/png');const img=$('qr-canvas').querySelector('img');return img?.src||null}
+function baixarQRCode(){if(!produtoAtual)return;const data=imagemQRCode();if(!data){alert('O QR Code ainda não foi gerado.');return}const a=document.createElement('a');a.href=data;a.download='SARA-QR-'+produtoAtual.qrcode+'.png';a.click()}
+function copiarLinkPublico(){if(!produtoAtual)return;navigator.clipboard.writeText(linkPublico(produtoAtual.qrcode)).then(()=>alert('Link público copiado!')).catch(()=>alert('Não foi possível copiar o link neste navegador.'))}
+function imprimirEtiqueta(){if(!produtoAtual)return;const data=imagemQRCode();if(!data){alert('O QR Code ainda não foi gerado.');return}const w=window.open('','_blank','width=520,height=650');if(!w){alert('Permita a abertura de janelas pop-up para imprimir a etiqueta.');return}w.document.write('<!doctype html><html lang="pt-BR"><meta charset="utf-8"><title>Etiqueta S.A.R.A.</title><style>body{font-family:Arial,sans-serif;text-align:center;padding:24px;color:#111}.label{border:1px solid #ddd;padding:20px;display:inline-block;max-width:340px}img{width:260px;height:260px}h2{font-size:18px;margin:8px 0}p{font-size:12px;word-break:break-all}@media print{body{padding:0}.label{border:0}}</style><div class="label"><h2>'+esc(produtoAtual.nome)+'</h2><img src="'+data+'"><p>Consulte a autenticidade e os dados do produto</p><p>'+esc(produtoAtual.qrcode)+'</p></div><script>window.onload=()=>window.print()<\/script></html>');w.document.close()}
 function renderizarInfoGerador(p){$('gen-nome').textContent=p.nome;$('gen-codigo').textContent=p.qrcode;$('gen-marca').textContent=p.marca;$('gen-lote').textContent=p.lote;$('gen-origem').textContent=p.origem;$('gen-status').innerHTML=p.vendido?'<span class="status-pill status-vendido">✓ Vendido</span>':'<span class="status-pill status-registrado">◉ Registrado</span>'}
 async function marcarComoVendido(){if(!produtoAtual)return;try{produtoAtual=await registrarVenda(produtoAtual.qrcode,'Loja Demonstração — PDV 01',null,'Demonstração');renderizarInfoGerador(produtoAtual);await atualizarTudo()}catch(e){alert(e.message)}}
 function copiarCodigo(){if(produtoAtual)navigator.clipboard.writeText(produtoAtual.qrcode).then(()=>alert('Código copiado!'))}
