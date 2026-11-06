@@ -1,242 +1,86 @@
-/* ============================================================================
-   S.A.R.A — db.js
-   "Banco de dados" 100% front-end, usando localStorage como armazenamento.
-   Nenhuma chamada de rede é feita: tudo roda no navegador.
-   ============================================================================ */
+/* S.A.R.A — integração REST com Supabase. JavaScript puro, sem backend próprio. */
+const SARA_SUPABASE_URL = 'https://awtoipbwnnrwvvznqjyb.supabase.co';
+const SARA_SUPABASE_KEY = 'sb_publishable_LuCAAdnBbaKw64G_cYa2_A_pxTaNN8j';
+const SARA_SESSION_KEY = 'sara_supabase_session_v1';
 
-const SARA_DB_KEY      = 'sara_db_v1';
-const SARA_SESSION_KEY = 'sara_session_v1';
-
-/* ---------------------------------------------------------------------------
-   Catálogo de produtos-base (simula os "tipos de produto" que saem de fábrica)
-   --------------------------------------------------------------------------- */
 const CATALOGO_PRODUTOS = [
-  { nome: 'Perfume Essência Noir 100ml', marca: 'Marca Premium',  categoria: 'Perfumes',     origem: 'Fábrica SP' },
-  { nome: 'Analgésico Pharma 500mg',     marca: 'Pharma Brasil',  categoria: 'Medicamentos', origem: 'Laboratório RJ' },
-  { nome: 'Bolsa Couro Edição Limitada', marca: 'LuxBrand',       categoria: 'Luxo',         origem: 'Importado — Itália' },
-  { nome: 'Smartphone X1 128GB',         marca: 'TechBrand',      categoria: 'Eletrônicos',  origem: 'Manaus AM' },
-  { nome: 'Vinho Reserva 750ml',         marca: 'Vinícola Sul',   categoria: 'Bebidas',       origem: 'Vinícola RS' },
-  { nome: 'Creme Facial Anti-idade',     marca: 'Cosméticos Bela', categoria: 'Cosméticos',   origem: 'Fábrica MG' },
-  { nome: 'Pastilha de Freio Original',  marca: 'AutoPeças Pro',  categoria: 'Autopeças',     origem: 'Fábrica PR' },
+  {nome:'Perfume Essência Noir 100ml',marca:'Marca Premium',categoria:'Perfumes',origem:'Fábrica SP'},
+  {nome:'Analgésico Pharma 500mg',marca:'Pharma Brasil',categoria:'Medicamentos',origem:'Laboratório RJ'},
+  {nome:'Bolsa Couro Edição Limitada',marca:'LuxBrand',categoria:'Luxo',origem:'Importado — Itália'},
+  {nome:'Smartphone X1 128GB',marca:'TechBrand',categoria:'Eletrônicos',origem:'Manaus AM'},
+  {nome:'Vinho Reserva 750ml',marca:'Vinícola Sul',categoria:'Bebidas',origem:'Vinícola RS'},
+  {nome:'Creme Facial Anti-idade',marca:'Cosméticos Bela',categoria:'Cosméticos',origem:'Fábrica MG'},
+  {nome:'Pastilha de Freio Original',marca:'AutoPeças Pro',categoria:'Autopeças',origem:'Fábrica PR'}
 ];
 
-/* ---------------------------------------------------------------------------
-   Estrutura do "banco":
-   {
-     usuarios:  [{ usuario, senha }],
-     produtos:  [{ id, qrcode, nome, marca, categoria, origem, lote,
-                   dataFabricacao, vendido, dataVenda, localVenda }],
-     logs:      [{ qrcode, resultado, dataHora }]
-   }
-   --------------------------------------------------------------------------- */
-
-function dbPadrao() {
-  return {
-    usuarios: [
-      { usuario: 'admin', senha: 'admin123' }
-    ],
-    produtos: [],
-    logs: [],
-  };
+function saraSessao(){try{return JSON.parse(localStorage.getItem(SARA_SESSION_KEY)||'null')}catch{return null}}
+function sessaoAtual(){const s=saraSessao();return s?.user?{usuario:s.user.email,login:s.created_at}:null}
+function saraSalvarSessao(s){localStorage.setItem(SARA_SESSION_KEY,JSON.stringify(s))}
+async function saraRequest(path,options={}){
+  const s=saraSessao();
+  const headers={'apikey':SARA_SUPABASE_KEY,'Content-Type':'application/json',...(options.headers||{})};
+  if(s?.access_token) headers.Authorization='Bearer '+s.access_token;
+  else headers.Authorization='Bearer '+SARA_SUPABASE_KEY;
+  let response=await fetch(SARA_SUPABASE_URL+path,{...options,headers});
+  let body=await response.text(); let data=null;
+  try{data=body?JSON.parse(body):null}catch{data=body}
+  if(!response.ok) throw new Error(data?.message||data?.msg||data?.error_description||data?.hint||'Falha ao comunicar com o Supabase ('+response.status+').');
+  return data;
 }
-
-function dbLer() {
-  const raw = localStorage.getItem(SARA_DB_KEY);
-  if (!raw) {
-    const inicial = dbPadrao();
-    localStorage.setItem(SARA_DB_KEY, JSON.stringify(inicial));
-    return inicial;
-  }
-  try {
-    return JSON.parse(raw);
-  } catch {
-    const inicial = dbPadrao();
-    localStorage.setItem(SARA_DB_KEY, JSON.stringify(inicial));
-    return inicial;
-  }
+async function saraRefreshSession(){
+  const s=saraSessao(); if(!s?.refresh_token) return null;
+  try{
+    const r=await fetch(SARA_SUPABASE_URL+'/auth/v1/token?grant_type=refresh_token',{method:'POST',headers:{apikey:SARA_SUPABASE_KEY,'Content-Type':'application/json'},body:JSON.stringify({refresh_token:s.refresh_token})});
+    const d=await r.json(); if(!r.ok) throw new Error(d.message||'Sessão expirada');
+    saraSalvarSessao(d); return d;
+  }catch{localStorage.removeItem(SARA_SESSION_KEY);return null}
 }
-
-function dbSalvar(db) {
-  localStorage.setItem(SARA_DB_KEY, JSON.stringify(db));
-}
-
-function dbResetar() {
-  localStorage.removeItem(SARA_DB_KEY);
-  return dbLer();
-}
-
-/* ---------------------------------------------------------------------------
-   Autenticação (simples, local — sem criptografia real, é só para a demo)
-   --------------------------------------------------------------------------- */
-
-function autenticar(usuario, senha) {
-  const db = dbLer();
-  const encontrado = db.usuarios.find(
-    u => u.usuario.toLowerCase() === usuario.trim().toLowerCase() && u.senha === senha
-  );
-  if (!encontrado) return false;
-  sessionStorage.setItem(SARA_SESSION_KEY, JSON.stringify({ usuario: encontrado.usuario, login: new Date().toISOString() }));
+async function autenticar(email,senha){
+  const r=await fetch(SARA_SUPABASE_URL+'/auth/v1/token?grant_type=password',{method:'POST',headers:{apikey:SARA_SUPABASE_KEY,'Content-Type':'application/json'},body:JSON.stringify({email:email.trim(),password:senha})});
+  const d=await r.json();
+  if(!r.ok) throw new Error(d.msg||d.message||'E-mail ou senha incorretos.');
+  saraSalvarSessao(d);
+  try{
+    const perfil=await saraRequest('/rest/v1/perfis?select=nome,papel,ativo&user_id=eq.'+encodeURIComponent(d.user.id));
+    if(!perfil?.length||!perfil[0].ativo){await logout();throw new Error('Usuário autenticado, mas sem perfil ativo no S.A.R.A. Solicite liberação ao administrador.')}
+    d.perfil=perfil[0]; saraSalvarSessao(d);
+  }catch(e){await logout();throw e}
   return true;
 }
-
-function sessaoAtual() {
-  const raw = sessionStorage.getItem(SARA_SESSION_KEY);
-  if (!raw) return null;
-  try { return JSON.parse(raw); } catch { return null; }
+async function logout(){
+  const s=saraSessao();
+  if(s?.access_token){try{await fetch(SARA_SUPABASE_URL+'/auth/v1/logout',{method:'POST',headers:{apikey:SARA_SUPABASE_KEY,Authorization:'Bearer '+s.access_token}})}catch{}}
+  localStorage.removeItem(SARA_SESSION_KEY);
 }
-
-function logout() {
-  sessionStorage.removeItem(SARA_SESSION_KEY);
+async function exigirLogin(){
+  let s=saraSessao();
+  if(!s?.access_token){location.href='login.html';return false}
+  if(s.expires_at && s.expires_at*1000<Date.now()+30000){s=await saraRefreshSession()}
+  if(!s?.access_token){location.href='login.html';return false}
+  try{
+    const p=await saraRequest('/rest/v1/perfis?select=nome,papel,ativo&user_id=eq.'+encodeURIComponent(s.user.id));
+    if(!p?.length||!p[0].ativo) throw new Error('Perfil sem acesso');
+    s.perfil=p[0];saraSalvarSessao(s);return true;
+  }catch{await logout();location.href='login.html';return false}
 }
-
-function exigirLogin() {
-  if (!sessaoAtual()) {
-    window.location.href = 'login.html';
-  }
+function gerarCodigoAleatorio(){const a=new Uint8Array(16);crypto.getRandomValues(a);return 'SARA-'+new Date().getFullYear()+'-'+Array.from(a).map(x=>x.toString(16).padStart(2,'0')).join('').toUpperCase()}
+function gerarLote(){const d=new Date();return 'LT-'+d.getFullYear()+String(d.getMonth()+1).padStart(2,'0')+'-'+String(Math.floor(Math.random()*999)+1).padStart(3,'0')}
+function normalizarCodigo(c){let v=(c||'').trim();try{const u=new URL(v);v=u.searchParams.get('codigo')||u.searchParams.get('qrcode')||u.pathname.split('/').pop()||v}catch{}return v.trim().toUpperCase()}
+async function registrarNovoProduto(){
+  const b=CATALOGO_PRODUTOS[Math.floor(Math.random()*CATALOGO_PRODUTOS.length)];
+  const q=gerarCodigoAleatorio(), lote=gerarLote();
+  return await saraRequest('/rest/v1/rpc/sara_registrar_produto',{method:'POST',body:JSON.stringify({p_nome:b.nome,p_marca:b.marca,p_categoria:b.categoria,p_origem:b.origem,p_lote:lote,p_qrcode:q})});
 }
-
-/* ---------------------------------------------------------------------------
-   Geração de código QR único (o "registro de fabricação")
-   --------------------------------------------------------------------------- */
-
-function gerarCodigoAleatorio() {
-  const ano = new Date().getFullYear();
-  const numero = Math.floor(1000 + Math.random() * 9000);
-  const sufixo = Math.random().toString(36).substring(2, 6).toUpperCase();
-  return `SARA-${ano}-${numero}-${sufixo}`;
+async function registrarVenda(codigo,localVenda,valorVenda,vendedor){
+  return await saraRequest('/rest/v1/rpc/sara_registrar_venda',{method:'POST',body:JSON.stringify({p_qrcode:normalizarCodigo(codigo),p_local_venda:localVenda||'Loja Demonstração — PDV 01',p_valor_venda:valorVenda?Number(valorVenda):null,p_vendedor:vendedor||null})});
 }
-
-function gerarLote() {
-  const mes = String(new Date().getMonth() + 1).padStart(2, '0');
-  const ano = new Date().getFullYear();
-  const seq = Math.floor(1 + Math.random() * 999);
-  return `LT-${ano}${mes}-${String(seq).padStart(3, '0')}`;
+async function verificarCodigo(codigo){
+  const c=normalizarCodigo(codigo);
+  if(!c)return {resultado:'erro',mensagem:'Informe um código para verificar.'};
+  return await saraRequest('/rest/v1/rpc/sara_verificar_codigo',{method:'POST',body:JSON.stringify({p_qrcode:c})});
 }
-
-/* Cria um novo "produto de fábrica" com QR Code único e o grava no banco.
-   Por padrão nasce como NÃO vendido (replica o Status: Registrado do PDF). */
-function registrarNovoProduto() {
-  const db = dbLer();
-  const base = CATALOGO_PRODUTOS[Math.floor(Math.random() * CATALOGO_PRODUTOS.length)];
-  const codigo = gerarCodigoAleatorio();
-
-  const produto = {
-    id: codigo,
-    qrcode: codigo,
-    nome: base.nome,
-    marca: base.marca,
-    categoria: base.categoria,
-    origem: base.origem,
-    lote: gerarLote(),
-    dataFabricacao: new Date().toISOString(),
-    vendido: false,
-    dataVenda: null,
-    localVenda: null,
-  };
-
-  db.produtos.push(produto);
-  dbSalvar(db);
-  return produto;
-}
-
-/* Simula a passagem do produto pelo caixa do lojista (Status: Vendido) */
-function registrarVenda(codigo, localVenda, valorVenda, vendedor) {
-  const db = dbLer();
-  const produto = db.produtos.find(p => p.qrcode === codigo);
-  if (!produto || produto.vendido) return null;
-  produto.vendido = true;
-  produto.dataVenda = new Date().toISOString();
-  produto.localVenda = localVenda || 'Loja Demonstração — PDV 01';
-  produto.valorVenda = Number(valorVenda) || null;
-  produto.vendedor = vendedor || null;
-  dbSalvar(db);
-  return produto;
-}
-
-/* ---------------------------------------------------------------------------
-   Verificação de autenticidade — o núcleo do S.A.R.A
-   Replica a lógica do slide "O gatilho que torna a falsificação inútil":
-   se o mesmo QR (já vendido) for escaneado mais de uma vez, é fraude.
-   --------------------------------------------------------------------------- */
-
-function verificarCodigo(codigoBruto) {
-  const codigo = (codigoBruto || '').trim().toUpperCase();
-  const db = dbLer();
-
-  if (!codigo) {
-    return { resultado: 'erro', mensagem: 'Informe um código para verificar.' };
-  }
-
-  const produto = db.produtos.find(p => p.qrcode === codigo);
-
-  if (!produto) {
-    registrarLog(codigo, 'nao_encontrado');
-    return {
-      resultado: 'nao_encontrado',
-      codigo,
-      mensagem: 'Este QR Code não está cadastrado no sistema S.A.R.A.',
-    };
-  }
-
-  const totalScansAnteriores = db.logs.filter(l => l.qrcode === codigo).length;
-
-  // Produto registrado na fábrica mas ainda não vendido em loja
-  if (!produto.vendido) {
-    registrarLog(codigo, 'nao_vendido');
-    return {
-      resultado: 'nao_vendido',
-      codigo,
-      produto,
-      mensagem: 'Produto registrado na fábrica, mas ainda sem registro de venda em loja.',
-    };
-  }
-
-  // Produto vendido e essa é a primeira verificação pós-venda → autêntico
-  if (produto.vendido && totalScansAnteriores === 0) {
-    registrarLog(codigo, 'original');
-    return {
-      resultado: 'original',
-      codigo,
-      produto,
-      mensagem: 'Origem verificada — produto registrado e vendido legitimamente.',
-    };
-  }
-
-  // Produto vendido e já havia sido verificado antes → conflito / possível fraude
-  registrarLog(codigo, 'fraude');
-  return {
-    resultado: 'fraude',
-    codigo,
-    produto,
-    totalVerificacoes: totalScansAnteriores + 1,
-    mensagem: 'ALERTA: este código já foi verificado anteriormente após a venda. Possível clonagem do QR Code ou reutilização da embalagem.',
-  };
-}
-
-function registrarLog(codigo, resultado) {
-  const db = dbLer();
-  db.logs.push({ qrcode: codigo, resultado, dataHora: new Date().toISOString() });
-  dbSalvar(db);
-}
-
-/* ---------------------------------------------------------------------------
-   Helpers de listagem (para o painel / histórico)
-   --------------------------------------------------------------------------- */
-
-function listarProdutos() {
-  return dbLer().produtos.slice().sort((a, b) => new Date(b.dataFabricacao) - new Date(a.dataFabricacao));
-}
-
-function listarLogs() {
-  return dbLer().logs.slice().sort((a, b) => new Date(b.dataHora) - new Date(a.dataHora));
-}
-
-function estatisticas() {
-  const db = dbLer();
-  return {
-    totalProdutos: db.produtos.length,
-    totalVendidos: db.produtos.filter(p => p.vendido).length,
-    totalFraudes: db.logs.filter(l => l.resultado === 'fraude').length,
-    totalVerificacoes: db.logs.length,
-  };
-}
+async function listarProdutos(){return await saraRequest('/rest/v1/rpc/sara_listar_produtos',{method:'POST',body:'{}'})}
+async function listarLogs(){return await saraRequest('/rest/v1/rpc/sara_listar_logs',{method:'POST',body:'{}'})}
+async function estatisticas(){return await saraRequest('/rest/v1/rpc/sara_estatisticas',{method:'POST',body:'{}'})}
+function formatarData(iso){if(!iso)return '—';return new Date(iso).toLocaleDateString('pt-BR')}
+function formatarDataHora(iso){if(!iso)return '—';return new Date(iso).toLocaleString('pt-BR')}
