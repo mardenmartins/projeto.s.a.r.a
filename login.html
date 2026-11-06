@@ -169,6 +169,7 @@ form { display: flex; flex-direction: column; gap: 18px; }
 .login-hint .mono { color: var(--accent); font-family: var(--mono); }
 
 .login-submit { margin-top: 6px; }
+.login-register { margin-top: 12px; text-align: center; text-decoration: none; }
 
 @media (max-width: 760px) {
   .login-back { top: 12px; left: 12px; padding: 10px 16px; font-size: 13px; }
@@ -242,7 +243,7 @@ form { display: flex; flex-direction: column; gap: 18px; }
           <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
         </button>
 
-        <p style="text-align:center;font-size:13px;margin-top:14px">Ainda não tem conta? <a href="cadastro.html" style="color:var(--accent);font-weight:700">Cadastre-se como cliente</a></p>
+        <a href="./cadastro.html" class="btn btn-secondary btn-block login-register">Criar conta de cliente</a>
         <div class="login-hint">
           <span>🔑</span>
           <span>Acesso restrito a usuários previamente cadastrados e autorizados pelo administrador.</span>
@@ -255,7 +256,7 @@ form { display: flex; flex-direction: column; gap: 18px; }
 
 <script src="db.js"></script>
 <script>
-if (sessaoAtual()) location.href='sistema.html';
+if (sessaoAtual()) { const perfil=saraSessao()?.perfil; location.href=perfil?.papel==='cliente'?'cliente.html':'sistema.html'; }
 document.getElementById('form-login').addEventListener('submit',async function(e){
  e.preventDefault();
  const email=document.getElementById('usuario').value;
