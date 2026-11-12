@@ -1,441 +1,191 @@
-# 🔐 S.A.R.A.
+# S.A.R.A. — Sistema Automático de Reconhecimento de Autenticidade
 
-## Sistema Automático de Reconhecimento de Autenticidade
+<p align="center">
+  <strong>Uma identidade digital para cada produto.</strong><br/>
+  Rastreabilidade, transparência e verificação de autenticidade.
+</p>
 
-> **O padrão universal contra a falsificação. Da fábrica para as mãos do consumidor.**
+<p align="center">
+  <img alt="Status" src="https://img.shields.io/badge/status-MVP-2563eb?style=for-the-badge"/>
+  <img alt="JavaScript" src="https://img.shields.io/badge/JavaScript-ES6+-f7df1e?style=for-the-badge&logo=javascript&logoColor=111111"/>
+  <img alt="Supabase" src="https://img.shields.io/badge/Supabase-PostgreSQL-3fcf8e?style=for-the-badge&logo=supabase&logoColor=111111"/>
+  <img alt="GitHub Pages" src="https://img.shields.io/badge/Deploy-GitHub%20Pages-181717?style=for-the-badge&logo=github"/>
+</p>
 
-O **S.A.R.A. — Sistema Automático de Reconhecimento de Autenticidade** é uma solução tecnológica desenvolvida para combater a **falsificação de produtos**, utilizando uma identidade digital única para cada unidade produzida.
-
-A proposta é conectar o produto físico ao ambiente digital por meio de um **QR Code exclusivo**, permitindo registrar sua origem, acompanhar sua jornada e verificar sua autenticidade no momento da compra.
-
----
-
-## 🎯 O problema
-
-A produção e circulação de produtos falsificados provocam impactos significativos para consumidores, empresas e para o mercado.
-
-Entre os principais problemas estão:
-
-- 💰 **Prejuízos financeiros** para empresas e consumidores;
-- 🩺 **Riscos à saúde**, especialmente em produtos como medicamentos, cosméticos, alimentos e bebidas;
-- 🏷️ **Danos à reputação das marcas**;
-- 📦 **Reutilização não autorizada de embalagens originais**;
-- 🔎 Dificuldade de verificar a procedência e autenticidade de determinados produtos.
-
-A necessidade identificada é desenvolver uma solução tecnológica capaz de proporcionar **maior segurança e rastreabilidade** durante a circulação dos produtos.
+**[🇧🇷 Português](#-português) · [🇺🇸 English](#-english)**
 
 ---
 
-## 💡 A solução
+## 🇧🇷 Português
 
-O S.A.R.A. propõe uma mudança na forma de identificação dos produtos.
+### Visão geral
 
-Enquanto o código de barras tradicional identifica genericamente um lote ou modelo e pode ser reproduzido, o S.A.R.A. trabalha com uma **identidade exclusiva para cada unidade do produto**.
+O **S.A.R.A.** é um projeto acadêmico que propõe uma solução digital para apoiar a identificação de possíveis falsificações e ampliar a rastreabilidade de produtos. Cada unidade recebe um identificador associado a um QR Code, permitindo consultar informações e registros relacionados ao produto.
 
-Cada produto recebe um **QR Code único**, associado a um registro digital que contém informações sobre sua fabricação e acompanha sua jornada até a venda.
+O projeto foi desenvolvido como um MVP para demonstrar o fluxo de cadastro, identificação, registro de venda e consulta pública.
 
-### 🔐 Identidade digital do produto
+### Problema
 
-Cada unidade passa a possuir um registro próprio, funcionando como uma espécie de **“impressão digital” digital do produto**.
+Produtos falsificados podem gerar prejuízos financeiros, danos à reputação das marcas e riscos aos consumidores. Em muitos cenários, é difícil verificar a procedência de um item apenas pela embalagem ou por códigos convencionais.
 
-O sistema registra informações como:
+### Solução proposta
 
-- Nome do produto;
-- Marca responsável;
-- Lote de fabricação;
-- Código de barras;
-- Data de fabricação;
-- Local de origem/distribuição;
-- Data da venda;
-- Horário da transação;
-- Local da venda;
-- Status do produto;
-- Histórico de rastreabilidade.
+O S.A.R.A. associa um identificador individual a cada produto. A consulta do QR Code permite recuperar os dados disponíveis e verificar o histórico registrado pelo sistema. O cruzamento dessas informações pode apontar inconsistências que merecem análise.
 
+### Fluxo de funcionamento
 
+1. **Cadastro:** a empresa registra o produto e suas informações.
+2. **Identificação:** o sistema associa um código individual e um QR Code.
+3. **Comercialização:** a operação de venda é registrada no sistema.
+4. **Verificação:** o consumidor consulta o QR Code e visualiza as informações disponíveis.
+5. **Análise de inconsistências:** divergências no histórico podem gerar alertas para investigação.
 
----
+> **Nota:** o QR Code, isoladamente, não prova autenticidade. A proposta depende da integridade dos registros, dos controles de acesso e da validação dos eventos registrados.
 
-## 🔄 Como funciona
+### Funcionalidades contempladas no MVP
 
-O funcionamento do S.A.R.A. é baseado em uma jornada de rastreabilidade composta por quatro momentos principais:
+- Autenticação e acesso de usuários;
+- Cadastro e gerenciamento de produtos;
+- Identificação de produtos por QR Code;
+- Consulta pública de informações do produto;
+- Registro de vendas e consultas;
+- Estrutura de perfis e permissões;
+- Persistência de dados em banco PostgreSQL gerenciado pelo Supabase.
 
-```text
-🏭 FABRICAÇÃO
-      │
-      ▼
-📋 REGISTRO DO PRODUTO
-      │
-      ▼
-🔐 QR CODE ÚNICO
-      │
-      ▼
-🚛 DISTRIBUIÇÃO
-      │
-      ▼
-🏪 VENDA NO PDV
-      │
-      ▼
-📍 REGISTRO DA VENDA
-      │
-      ▼
-📱 VERIFICAÇÃO PELO CONSUMIDOR
-      │
-      ▼
-✅ AUTÊNTICO
-      │
-      └──────────────► ⚠️ CONFLITO DETECTADO
-```
+### Tecnologias
 
-### 1. 🏭 Registro de fabricação
-
-Durante a fabricação, o produto recebe seu **QR Code único** e suas informações são registradas no sistema.
-
-O produto passa a possuir uma identidade digital individual.
-
-### 2. 🚛 Distribuição
-
-O produto segue pela cadeia logística até chegar ao estabelecimento comercial.
-
-### 3. 🏪 Registro da venda
-
-No ponto de venda, o código de barras é utilizado para registrar a comercialização.
-
-O S.A.R.A. associa a identidade do produto à:
-
-- Data da venda;
-- Horário;
-- Local da transação;
-- Situação do produto.
-
-O status passa a ser **“Vendido”**.
-
-### 4. 📱 Verificação
-
-Após a compra, o consumidor pode escanear o QR Code utilizando a câmera do celular.
-
-O sistema consulta a identidade digital e verifica as informações registradas para confirmar a autenticidade do produto.
-
----
-
-## ⚠️ Detecção de falsificações
-
-Um dos principais diferenciais do S.A.R.A. é a possibilidade de identificar conflitos relacionados à reutilização ou clonagem de identificadores.
-
-Imagine que um falsificador copie fisicamente uma embalagem original e reproduza o QR Code de um produto legítimo.
-
-Se aquele produto original já tiver sido vendido por uma loja oficial, o sistema terá registrado sua venda.
-
-Quando o QR Code copiado for posteriormente consultado, o S.A.R.A. poderá identificar uma inconsistência no histórico ou na localização do produto.
-
-```text
-PRODUTO ORIGINAL
-      │
-      ├── QR Code: #A12345
-      │
-      └── Venda registrada
-              │
-              ▼
-          STATUS: VENDIDO
-
-
-PRODUTO FALSIFICADO
-      │
-      ├── QR Code copiado: #A12345
-      │
-      └── Nova tentativa de verificação
-              │
-              ▼
-       ⚠️ CONFLITO DETECTADO
-```
-
-Assim, a simples clonagem do código deixa de ser suficiente para conferir legitimidade ao produto.
-
----
-
-## 🏗️ Arquitetura da solução
-
-A arquitetura conceitual do S.A.R.A. é composta por três camadas:
-
-```text
-┌──────────────────────────────────────────┐
-│              LAYER 1                     │
-│          CLIENTE / ACESSO                │
-│                                          │
-│  🏪 PDV                  📱 Consumidor   │
-│  Código de barras        QR Code         │
-└───────────────────┬──────────────────────┘
-                    │
-                    ▼
-┌──────────────────────────────────────────┐
-│              LAYER 2                     │
-│          SERVIDOR / API S.A.R.A.         │
-│                                          │
-│  • Processamento                         │
-│  • Validação                             │
-│  • Cruzamento de históricos              │
-│  • Verificação de duplicidades           │
-│  • Detecção de inconsistências            │
-└───────────────────┬──────────────────────┘
-                    │
-                    ▼
-┌──────────────────────────────────────────┐
-│              LAYER 3                     │
-│      BANCO DE DADOS / NUVEM              │
-│                                          │
-│  Identidade digital dos produtos         │
-│  Histórico de rastreabilidade            │
-└──────────────────────────────────────────┘
-```
-
-A apresentação do projeto estrutura a solução justamente nessas três camadas: cliente, servidor/API e banco de dados central em nuvem.
-
----
-
-## 🌎 Aplicações
-
-A solução foi concebida para ser adaptável a diferentes segmentos que sofrem com falsificação.
-
-Entre eles:
-
-- 💊 Medicamentos;
-- 🧴 Cosméticos;
-- 🥤 Bebidas;
-- 🍔 Alimentos;
-- 📱 Eletrônicos;
-- 💎 Produtos de luxo;
-- 👕 Roupas e acessórios;
-- 🚗 Peças automotivas.
-
-A proposta apresentada é utilizar o mesmo conceito de identidade e rastreabilidade em diferentes superfícies e setores.
-
----
-
-## 👥 Quem se beneficia?
-
-### 👤 Consumidor
-
-- Verificação da autenticidade;
-- Maior segurança na compra;
-- Redução do risco de adquirir produtos falsificados;
-- Facilidade de consulta por meio do QR Code.
-
-### 🏭 Empresas e marcas
-
-- Combate à falsificação;
-- Rastreabilidade dos produtos;
-- Proteção da marca;
-- Maior controle sobre a distribuição.
-
-### 🏪 Estabelecimentos
-
-- Registro das vendas;
-- Associação do produto ao local da comercialização;
-- Contribuição para a rastreabilidade.
-
-### 🏛️ Mercado e órgãos reguladores
-
-- Maior transparência;
-- Dados auditáveis;
-- Apoio ao combate à circulação de mercadorias adulteradas;
-- Fortalecimento do mercado formal.
-
-
-
----
-
-## 🛠️ Tecnologias
-
-O projeto utiliza tecnologias de desenvolvimento Web para construção do MVP:
-
-| Tecnologia | Utilização |
+| Tecnologia | Aplicação |
 |---|---|
-| **HTML5** | Estrutura da aplicação |
-| **CSS3** | Interface e estilização |
-| **JavaScript** | Lógica e interações |
-| **Git** | Controle de versão |
-| **GitHub** | Hospedagem do código e colaboração |
-| **GitHub Pages** | Publicação do MVP |
+| HTML5 | Estrutura das páginas |
+| CSS3 | Estilização e interface |
+| JavaScript | Regras e interações no cliente |
+| Supabase Auth | Autenticação |
+| PostgreSQL / Supabase | Persistência dos dados |
+| Git e GitHub | Versionamento e colaboração |
+| GitHub Pages | Publicação da interface |
 
----
-
-## 📁 Estrutura do projeto
-
-```text
-projetos.a.r.a/
-│
-├── index.html       # Página principal
-├── login.html       # Interface de acesso
-├── style.css        # Estilos da aplicação
-├── db.js            # Estrutura relacionada aos dados
-└── README.md        # Documentação
-```
-
----
-
-## 🚀 Como executar
-
-### Pré-requisitos
-
-- Git;
-- Navegador Web atualizado;
-- Visual Studio Code ou outro editor de código.
-
-### Clone o repositório
-
-```bash
-git clone https://github.com/mardenmartins/projetos.a.r.a.git
-```
-
-### Acesse o diretório
-
-```bash
-cd projetos.a.r.a
-```
-
-### Execute
-
-Abra o arquivo:
+### Estrutura principal
 
 ```text
-index.html
+projeto.s.a.r.a/
+├── index.html              # Página inicial
+├── login.html              # Acesso ao sistema
+├── cadastro.html           # Cadastro
+├── cliente.html            # Área do cliente
+├── sistema.html            # Painel administrativo
+├── pdv.html                # Fluxo de ponto de venda
+├── vendas.html             # Registros de vendas
+├── verificar.html          # Consulta pública por QR Code
+├── como-funciona.html      # Apresentação da solução
+├── aviso-privacidade.html  # Aviso de privacidade
+├── db.js                   # Integração com Supabase
+├── style.css               # Estilos
+└── README.md               # Documentação
 ```
 
-Para desenvolvimento local, recomenda-se utilizar o **Live Server** no Visual Studio Code.
+### Executar localmente
 
----
+**Pré-requisitos:** Git, navegador atualizado e editor de código.
 
-## 📌 MVP
-
-O MVP do S.A.R.A. concentra-se na validação do conceito central da solução:
-
-> **Um produto físico → uma identidade digital → um QR Code único → registro da venda → verificação da autenticidade.**
-
-A primeira versão busca demonstrar que é possível conectar o produto físico ao ambiente digital e utilizar seu histórico para auxiliar na identificação de possíveis falsificações.
-
-Funcionalidades mais avançadas, como integração com Blockchain, inteligência de mercado e programas de fidelidade, fazem parte da visão de evolução do produto e não constituem o núcleo inicial do MVP.
-
----
-
-## 🔮 Visão de futuro
-
-O S.A.R.A. foi concebido para evoluir além da simples verificação de autenticidade.
-
-A arquitetura pode futuramente permitir:
-
-### 📊 Inteligência de mercado
-
-Utilização dos dados de rastreabilidade para compreender padrões de distribuição e consumo.
-
-### 🎯 Engajamento e marketing
-
-A página de verificação pode futuramente ser integrada a programas de fidelidade e estratégias de relacionamento com consumidores.
-
-### ⛓️ Blockchain
-
-A arquitetura foi projetada com possibilidade de integração futura com tecnologias Blockchain para aumentar o nível de imutabilidade e descentralização dos registros.
-
----
-
-## 🎓 Projeto acadêmico
-
-O S.A.R.A. foi desenvolvido no contexto do **5º SENAC INNOVADAY**, pela **Faculdade de Tecnologia e Inovação Senac-DF**, em Brasília, no ano de 2026.
-
-O projeto busca demonstrar como tecnologias de desenvolvimento de software podem ser aplicadas a um problema real: **a falsificação e a dificuldade de verificar a autenticidade de produtos**.
-
----
-
-## 👨‍💻 Equipe
-
-O S.A.R.A. é desenvolvido por:
-
-- **Marden Martins**
-- **Raiane Reis**
-- **Lucas Cavalcante**
-- **Henrique Paixão**
-- **Walisson Araújo**
-
----
-
-## 📊 Impacto esperado
-
-O S.A.R.A. busca contribuir para:
-
-**🔐 Mais segurança**  
-Produtos com identidade digital verificável.
-
-**🏭 Mais proteção para as marcas**  
-Maior controle e rastreabilidade da cadeia.
-
-**👤 Mais confiança para o consumidor**  
-Possibilidade de verificar a autenticidade antes ou após a compra.
-
-**📦 Mais rastreabilidade**  
-Registro da jornada do produto desde sua fabricação até sua venda.
-
-**⚠️ Menos espaço para falsificações**  
-Detecção de conflitos relacionados à reutilização ou clonagem de identificadores.
-
----
-
-## 🔗 Links
-
-### 💻 Repositório
-
-https://github.com/mardenmartins/projetos.a.r.a
-
-### 🌐 Aplicação
-
-https://mardenmartins.github.io/projetos.a.r.a/
-
----
-
-<div align="center">
-
-# 🔐 S.A.R.A.
-
-### Sistema Automático de Reconhecimento de Autenticidade
-
-**Uma identidade digital para cada produto.**
-
-**Da fábrica para as mãos do consumidor.**
-
----
-
-Desenvolvido por  
-**Marden Martins · Raiane Reis · Lucas Cavalcante · Henrique Paixão · Walisson Araújo**
-
-**5º SENAC INNOVADAY · 2026**
-
-</div>
-
-
----
-
-## Banco de dados Supabase
-
-O MVP utiliza Supabase Auth e PostgreSQL por meio da API REST, sem servidor Node.js/Java próprio.
-
-### Configuração inicial
-
-1. Abra o projeto Supabase conectado ao repositório.
-2. Execute as migrations `sara_initial_database`, `fix_profile_policy_recursion`, `tighten_sara_permissions_and_indexes` e `restrict_rpc_function_execution` (já aplicadas ao projeto conectado).
-3. Crie os usuários em Authentication → Users.
-4. Cadastre um perfil para cada usuário autorizado. Para o primeiro administrador, execute no SQL Editor:
-
-```sql
-insert into public.perfis (user_id, nome, papel)
-values ('UUID_DO_USUARIO_AUTH', 'Administrador S.A.R.A.', 'admin');
+```bash
+git clone https://github.com/mardenmartins/projeto.s.a.r.a.git
+cd projeto.s.a.r.a
 ```
 
-Para operadores, use `papel = 'operador'`. Não habilite cadastro público irrestrito de perfis.
+Abra o arquivo `index.html` no navegador ou utilize a extensão Live Server no Visual Studio Code.
 
-### Arquitetura
+### Banco de dados e configuração
 
-- `db.js`: autenticação e chamadas REST/RPC do Supabase.
-- `sistema.html`: cadastro de produtos, QR, painel e histórico de verificações.
-- `pdv.html`: consulta de produto e registro atômico de venda.
-- `verificar.html?codigo=...`: consulta pública do QR Code.
-- Tabelas: `perfis`, `produtos`, `registros_venda`, `registros_verificacao`.
+O projeto utiliza Supabase para autenticação e persistência. Para executar uma instância própria:
 
-Apenas a chave publishable/anon é usada no navegador. Nunca publique service_role ou secret keys.
+1. Crie um projeto no Supabase.
+2. Configure as tabelas, políticas de segurança (RLS) e funções necessárias.
+3. Configure no código do cliente apenas a chave pública apropriada (publishable/anon).
+4. Crie os usuários e atribua perfis conforme as regras de acesso do projeto.
+
+**Segurança:** nunca inclua `service_role`, secret keys, senhas ou credenciais privadas no repositório ou no código executado no navegador. Revise as políticas RLS antes de disponibilizar dados reais.
+
+### Demonstração
+
+- **Aplicação:** https://mardenmartins.github.io/projeto.s.a.r.a/
+- **Repositório:** https://github.com/mardenmartins/projeto.s.a.r.a
+
+### Contexto acadêmico
+
+Projeto desenvolvido no contexto do **5º SENAC INNOVADAY**, na Faculdade de Tecnologia e Inovação Senac-DF, em Brasília, 2026.
+
+### Equipe
+
+- Marden Martins
+- Raiane Reis
+- Lucas Cavalcante
+- Henrique Paixão
+- Walisson Araújo
+
+---
+
+## 🇺🇸 English
+
+### Overview
+
+**S.A.R.A.** is an academic MVP exploring a digital approach to product identification and traceability. Each product unit is associated with a unique identifier and a QR Code, enabling users to access available product information and recorded events.
+
+### The challenge
+
+Counterfeit goods can cause financial losses, damage brand reputation and expose consumers to risks. Verifying a product's origin using packaging or conventional codes alone can be difficult.
+
+### Proposed solution
+
+S.A.R.A. links each product unit to a digital record. By scanning its QR Code, users can access available information and review recorded events. Comparing these records may reveal inconsistencies that require further investigation.
+
+### Main workflow
+
+1. **Registration:** a company registers product information.
+2. **Identification:** the system associates an individual identifier and QR Code.
+3. **Sale:** the transaction is recorded.
+4. **Verification:** consumers scan the QR Code to access available information.
+5. **Inconsistency review:** conflicting records may trigger alerts for further investigation.
+
+> **Important:** a QR Code alone does not prove authenticity. The approach relies on reliable records, access controls and proper event validation.
+
+### Main capabilities
+
+- User authentication;
+- Product registration and management;
+- QR Code-based product identification;
+- Public product lookup;
+- Sales and verification records;
+- User roles and permissions;
+- PostgreSQL persistence through Supabase.
+
+### Technology stack
+
+HTML5 · CSS3 · JavaScript · Supabase Auth · PostgreSQL · Git · GitHub · GitHub Pages.
+
+### Run locally
+
+```bash
+git clone https://github.com/mardenmartins/projeto.s.a.r.a.git
+cd projeto.s.a.r.a
+```
+
+Open `index.html` in a browser or use Visual Studio Code with Live Server. Configure your own Supabase project and security policies before using the application with real data.
+
+### Links
+
+- **Live application:** https://mardenmartins.github.io/projeto.s.a.r.a/
+- **Source code:** https://github.com/mardenmartins/projeto.s.a.r.a
+
+### Academic project
+
+Developed for **5th SENAC INNOVADAY**, Faculdade de Tecnologia e Inovação Senac-DF, Brasília, Brazil, 2026.
+
+### Team
+
+Marden Martins · Raiane Reis · Lucas Cavalcante · Henrique Paixão · Walisson Araújo
+
+---
+
+<p align="center">
+  <sub>Projeto acadêmico em evolução · Academic project in progress</sub>
+</p>
