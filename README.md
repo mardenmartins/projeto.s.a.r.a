@@ -1,120 +1,204 @@
 # S.A.R.A. — Sistema Automático de Reconhecimento de Autenticidade
 
 <p align="center">
-  <strong>Uma identidade digital para cada produto.</strong><br/>
-  Rastreabilidade, transparência e verificação de autenticidade.
+  <strong>Uma identidade digital para cada produto.</strong><br>
+  Rastreabilidade, transparência e consulta de procedência.
 </p>
 
 <p align="center">
-  <img alt="Status" src="https://img.shields.io/badge/status-MVP-2563eb?style=for-the-badge"/>
-  <img alt="JavaScript" src="https://img.shields.io/badge/JavaScript-ES6+-f7df1e?style=for-the-badge&logo=javascript&logoColor=111111"/>
-  <img alt="Supabase" src="https://img.shields.io/badge/Supabase-PostgreSQL-3fcf8e?style=for-the-badge&logo=supabase&logoColor=111111"/>
-  <img alt="GitHub Pages" src="https://img.shields.io/badge/Deploy-GitHub%20Pages-181717?style=for-the-badge&logo=github"/>
+  <img alt="Situação: em desenvolvimento" src="https://img.shields.io/badge/situa%C3%A7%C3%A3o-em_desenvolvimento-00a878?style=for-the-badge">
+  <img alt="JavaScript" src="https://img.shields.io/badge/JavaScript-ES6%2B-f7df1e?style=for-the-badge&logo=javascript&logoColor=111111">
+  <img alt="Banco de dados Supabase" src="https://img.shields.io/badge/banco_de_dados-Supabase-3fcf8e?style=for-the-badge&logo=supabase&logoColor=111111">
+  <img alt="Hospedagem GitHub Pages" src="https://img.shields.io/badge/hospedagem-GitHub_Pages-181717?style=for-the-badge&logo=github">
 </p>
-
-**[🇧🇷 Português](#-português) · [🇺🇸 English](#-english)**
 
 ---
 
-## 🇧🇷 Português
+## 1. Sobre o projeto
 
-### Visão geral
+O **S.A.R.A. (Sistema Automático de Reconhecimento de Autenticidade)** é uma aplicação desenvolvida para apoiar a identificação de produtos, registrar informações de fabricação e comercialização e permitir que consumidores consultem publicamente os dados associados a cada unidade.
 
-O **S.A.R.A.** é um projeto acadêmico que propõe uma solução digital para apoiar a identificação de possíveis falsificações e ampliar a rastreabilidade de produtos. Cada unidade recebe um identificador associado a um QR Code, permitindo consultar informações e registros relacionados ao produto.
+Cada unidade física recebe um código identificador exclusivo e um QR Code próprio. Ao escanear o código, o consumidor é direcionado à página pública de verificação, onde pode consultar as informações disponíveis e o resultado da análise realizada pelo sistema.
 
-O projeto foi desenvolvido como um MVP para demonstrar o fluxo de cadastro, identificação, registro de venda e consulta pública.
+O projeto está organizado para atender empresas fabricantes, seus colaboradores e consumidores, com níveis distintos de acesso.
 
-### Problema
+## 2. Problema que o projeto busca enfrentar
 
-Produtos falsificados podem gerar prejuízos financeiros, danos à reputação das marcas e riscos aos consumidores. Em muitos cenários, é difícil verificar a procedência de um item apenas pela embalagem ou por códigos convencionais.
+A circulação de produtos falsificados pode causar prejuízos financeiros, comprometer a reputação das marcas e expor consumidores a riscos. Em diversas situações, a embalagem ou a identificação convencional não oferece meios suficientes para consultar a procedência de um produto.
 
-### Solução proposta
+O S.A.R.A. propõe uma forma de associar cada unidade a um registro digital consultável, reunindo informações do produto e eventos registrados ao longo de seu fluxo.
 
-O S.A.R.A. associa um identificador individual a cada produto. A consulta do QR Code permite recuperar os dados disponíveis e verificar o histórico registrado pelo sistema. O cruzamento dessas informações pode apontar inconsistências que merecem análise.
+## 3. Objetivos e solução
 
-### Fluxo de funcionamento
+A solução permite que uma fábrica cadastre produtos, gere identificadores individuais, registre vendas e acompanhe consultas. O consumidor, por sua vez, não precisa criar uma conta: basta escanear o QR Code presente no produto para acessar a página pública de verificação.
 
-1. **Cadastro:** a empresa registra o produto e suas informações.
-2. **Identificação:** o sistema associa um código individual e um QR Code.
-3. **Comercialização:** a operação de venda é registrada no sistema.
-4. **Verificação:** o consumidor consulta o QR Code e visualiza as informações disponíveis.
-5. **Análise de inconsistências:** divergências no histórico podem gerar alertas para investigação.
+O sistema também mantém registros de consultas e pode sinalizar situações que mereçam investigação, como reutilização ou conflito no histórico de um código.
 
-> **Nota:** o QR Code, isoladamente, não prova autenticidade. A proposta depende da integridade dos registros, dos controles de acesso e da validação dos eventos registrados.
+> **Importante:** o QR Code, isoladamente, não comprova que um produto é original. A análise depende da integridade dos registros, da segurança dos acessos e da validação das informações armazenadas.
 
-### Funcionalidades contempladas no MVP
+## 4. Perfis de acesso
 
-- Autenticação e acesso de usuários;
-- Cadastro e gerenciamento de produtos;
-- Identificação de produtos por QR Code;
-- Consulta pública de informações do produto;
-- Registro de vendas e consultas;
-- Estrutura de perfis e permissões;
-- Persistência de dados em banco PostgreSQL gerenciado pelo Supabase.
+O acesso é organizado por empresa, com separação dos dados de cada fábrica.
 
-### Tecnologias
-
-| Tecnologia | Aplicação |
+| Perfil | Responsabilidades |
 |---|---|
-| HTML5 | Estrutura das páginas |
-| CSS3 | Estilização e interface |
-| JavaScript | Regras e interações no cliente |
-| Supabase Auth | Autenticação |
-| PostgreSQL / Supabase | Persistência dos dados |
-| Git e GitHub | Versionamento e colaboração |
-| GitHub Pages | Publicação da interface |
+| **Administrador geral do S.A.R.A.** | Administra a plataforma e realiza o cadastro e a gestão das fábricas. |
+| **Administrador da fábrica** | Gerencia os usuários da própria empresa e acompanha os produtos e registros da fábrica. |
+| **Operador da fábrica** | Realiza operações autorizadas, como cadastro de produtos e acompanhamento dos registros. |
+| **Consumidor** | Consulta gratuitamente as informações públicas do produto por meio do QR Code, sem precisar criar conta. |
 
-### Estrutura principal
+O cadastro de novas fábricas é controlado pelo administrador geral. O administrador de cada fábrica pode convidar colaboradores para atuar como operadores da própria empresa.
+
+## 5. Funcionamento do sistema
+
+1. **Cadastro da fábrica:** o administrador geral registra a empresa na plataforma.
+2. **Acesso da equipe:** o administrador da fábrica convida os colaboradores autorizados.
+3. **Cadastro do produto:** a equipe informa nome, marca, categoria, origem e lote.
+4. **Geração dos identificadores:** o sistema cria um código exclusivo e um QR Code para cada unidade física, inclusive quando o cadastro é feito em lote.
+5. **Identificação e distribuição:** os QR Codes podem ser baixados, organizados em arquivo CSV e impressos em etiquetas.
+6. **Registro da venda:** a operação comercial é registrada e vinculada ao produto e à fábrica.
+7. **Consulta pública:** o consumidor escaneia o QR Code e acessa as informações disponíveis.
+8. **Acompanhamento:** a fábrica consulta seus produtos, vendas, verificações e alertas.
+
+## 6. Funcionalidades implementadas
+
+### Gestão de fábricas e usuários
+- Estrutura de cadastro de fábricas;
+- Perfis de administrador geral, administrador da fábrica e operador;
+- Convite de colaboradores por e-mail;
+- Associação dos usuários à respectiva fábrica;
+- Separação de dados por empresa por meio das regras de acesso ao banco de dados.
+
+### Cadastro e identificação de produtos
+- Cadastro de produtos com nome, marca, categoria, origem e lote;
+- Geração de identificador e QR Code individual por unidade;
+- Cadastro de lotes com várias unidades;
+- Exibição dos QR Codes no painel de produtos;
+- Download individual dos QR Codes;
+- Impressão de etiquetas;
+- Exportação da relação de códigos e links em arquivo CSV.
+
+### Vendas e verificação
+- Registro e consulta de vendas;
+- Consulta pública por código QR;
+- Exibição das informações disponíveis do produto;
+- Registro de consultas;
+- Exibição de resultados de verificação e alertas para análise.
+
+### Interface e acesso
+- Página inicial de apresentação;
+- Tela de autenticação;
+- Painel da fábrica;
+- Área de vendas e ponto de venda;
+- Página pública de verificação;
+- Página explicativa sobre o funcionamento;
+- Aviso de privacidade;
+- Ícone de identificação do S.A.R.A. nas páginas da aplicação.
+
+## 7. Tecnologias utilizadas
+
+| Tecnologia | Finalidade |
+|---|---|
+| **HTML5** | Estrutura das páginas da aplicação. |
+| **CSS3** | Estilos, identidade visual e adaptação a diferentes telas. |
+| **JavaScript** | Regras de funcionamento e interações da interface. |
+| **Supabase Auth** | Autenticação dos usuários. |
+| **PostgreSQL** | Armazenamento dos dados. |
+| **Supabase Edge Functions** | Execução de operações de servidor, como convite de colaboradores. |
+| **Políticas de segurança por linha (RLS)** | Controle de acesso aos registros conforme o usuário e a fábrica. |
+| **Git e GitHub** | Versionamento e colaboração no código. |
+| **GitHub Pages** | Publicação das páginas da aplicação. |
+
+## 8. Organização dos arquivos
 
 ```text
 projeto.s.a.r.a/
 ├── index.html              # Página inicial
-├── login.html              # Acesso ao sistema
-├── cadastro.html           # Cadastro
-├── cliente.html            # Área do cliente
-├── sistema.html            # Painel administrativo
-├── pdv.html                # Fluxo de ponto de venda
-├── vendas.html             # Registros de vendas
-├── verificar.html          # Consulta pública por QR Code
-├── como-funciona.html      # Apresentação da solução
+├── login.html              # Autenticação e acesso ao sistema
+├── cadastro.html           # Orientações sobre o acesso do consumidor
+├── cliente.html            # Área de consulta do consumidor
+├── sistema.html            # Painel da fábrica e gestão de produtos
+├── pdv.html                # Ponto de venda
+├── vendas.html             # Consulta e acompanhamento de vendas
+├── verificar.html          # Verificação pública por QR Code
+├── como-funciona.html      # Apresentação do funcionamento
 ├── aviso-privacidade.html  # Aviso de privacidade
-├── db.js                   # Integração com Supabase
-├── style.css               # Estilos
-└── README.md               # Documentação
+├── db.js                   # Integração com o Supabase
+├── style.css               # Estilos compartilhados
+├── favicon.svg             # Ícone de identificação do S.A.R.A.
+└── README.md               # Documentação do projeto
 ```
 
-### Executar localmente
+Além dos arquivos da interface, o projeto utiliza recursos configurados no Supabase, como tabelas, funções de banco de dados, políticas de acesso e uma função de servidor para convite de colaboradores.
 
-**Pré-requisitos:** Git, navegador atualizado e editor de código.
+## 9. Banco de dados e segurança
+
+O banco de dados utiliza PostgreSQL por meio do Supabase. Entre as estruturas utilizadas estão:
+
+- **fábricas:** cadastro e situação das empresas;
+- **perfis:** identificação dos usuários, seus papéis e vínculo com a fábrica;
+- **produtos:** dados dos produtos e seus identificadores;
+- **registros de venda:** informações das operações comerciais;
+- **registros de verificação:** histórico das consultas realizadas.
+
+As políticas de segurança por linha (RLS) são utilizadas para restringir o acesso aos registros conforme o perfil e a fábrica vinculada ao usuário. A consulta pública de autenticidade é disponibilizada por uma função específica, sem exigir autenticação do consumidor.
+
+A função de servidor responsável pelos convites utiliza credenciais protegidas no ambiente do Supabase. Chaves secretas não devem ser incluídas no código do navegador nem no repositório.
+
+### Configuração de uma instância própria
+
+Para executar uma cópia do projeto com outro banco de dados:
+
+1. Crie um projeto no Supabase.
+2. Configure as tabelas, relacionamentos, funções e políticas de segurança necessárias.
+3. Configure a URL do projeto e a chave pública de acesso no arquivo de integração, conforme a configuração do Supabase.
+4. Configure as variáveis protegidas necessárias à função de convite de colaboradores.
+5. Cadastre as fábricas e os usuários com seus respectivos perfis.
+6. Revise as políticas de acesso e as configurações de autenticação antes de utilizar dados reais.
+
+**Atenção:** nunca publique chaves secretas, credenciais administrativas, senhas ou chaves de serviço no repositório. A chave pública utilizada no navegador não substitui as políticas de segurança do banco de dados.
+
+## 10. Como executar localmente
+
+### Pré-requisitos
+- Git;
+- Navegador atualizado;
+- Editor de código, como o Visual Studio Code;
+- Projeto Supabase configurado.
+
+### Obter o código
 
 ```bash
 git clone https://github.com/mardenmartins/projeto.s.a.r.a.git
 cd projeto.s.a.r.a
 ```
 
-Abra o arquivo `index.html` no navegador ou utilize a extensão Live Server no Visual Studio Code.
+Abra a pasta no editor de código e execute a página inicial com uma extensão de servidor local, como o Live Server. A aplicação depende da configuração do Supabase para autenticação e acesso aos dados.
 
-### Banco de dados e configuração
+## 11. Demonstração e repositório
 
-O projeto utiliza Supabase para autenticação e persistência. Para executar uma instância própria:
+- **Aplicação publicada:** https://mardenmartins.github.io/projeto.s.a.r.a/
+- **Acesso ao sistema:** https://mardenmartins.github.io/projeto.s.a.r.a/login.html
+- **Consulta pública:** https://mardenmartins.github.io/projeto.s.a.r.a/verificar.html
+- **Código-fonte:** https://github.com/mardenmartins/projeto.s.a.r.a
 
-1. Crie um projeto no Supabase.
-2. Configure as tabelas, políticas de segurança (RLS) e funções necessárias.
-3. Configure no código do cliente apenas a chave pública apropriada (publishable/anon).
-4. Crie os usuários e atribua perfis conforme as regras de acesso do projeto.
+## 12. Situação atual e próximos aprimoramentos
 
-**Segurança:** nunca inclua `service_role`, secret keys, senhas ou credenciais privadas no repositório ou no código executado no navegador. Revise as políticas RLS antes de disponibilizar dados reais.
+O projeto possui uma estrutura funcional de interface, autenticação, perfis de acesso, cadastro de produtos, geração de QR Codes, registros de venda e consulta pública. A aplicação continua em desenvolvimento e requer testes operacionais completos antes de ser considerada pronta para uso comercial.
 
-### Demonstração
+Próximos aprimoramentos recomendados:
+- Testes completos de cadastro, convite e acesso dos diferentes perfis;
+- Testes de isolamento entre fábricas;
+- Validação dos fluxos de venda e consulta em diferentes cenários;
+- Revisão das regras de alertas para evitar classificar automaticamente toda consulta repetida como fraude comprovada;
+- Aprimoramentos de acessibilidade, desempenho e experiência em dispositivos móveis;
+- Revisão periódica das configurações de segurança e privacidade.
 
-- **Aplicação:** https://mardenmartins.github.io/projeto.s.a.r.a/
-- **Repositório:** https://github.com/mardenmartins/projeto.s.a.r.a
+## 13. Contexto acadêmico
 
-### Contexto acadêmico
+Projeto desenvolvido no contexto do **5º SENAC INNOVADAY**, da Faculdade de Tecnologia e Inovação Senac-DF, em Brasília, 2026.
 
-Projeto desenvolvido no contexto do **5º SENAC INNOVADAY**, na Faculdade de Tecnologia e Inovação Senac-DF, em Brasília, 2026.
-
-### Equipe
+## 14. Equipe
 
 - Marden Martins
 - Raiane Reis
@@ -124,68 +208,7 @@ Projeto desenvolvido no contexto do **5º SENAC INNOVADAY**, na Faculdade de Tec
 
 ---
 
-## 🇺🇸 English
-
-### Overview
-
-**S.A.R.A.** is an academic MVP exploring a digital approach to product identification and traceability. Each product unit is associated with a unique identifier and a QR Code, enabling users to access available product information and recorded events.
-
-### The challenge
-
-Counterfeit goods can cause financial losses, damage brand reputation and expose consumers to risks. Verifying a product's origin using packaging or conventional codes alone can be difficult.
-
-### Proposed solution
-
-S.A.R.A. links each product unit to a digital record. By scanning its QR Code, users can access available information and review recorded events. Comparing these records may reveal inconsistencies that require further investigation.
-
-### Main workflow
-
-1. **Registration:** a company registers product information.
-2. **Identification:** the system associates an individual identifier and QR Code.
-3. **Sale:** the transaction is recorded.
-4. **Verification:** consumers scan the QR Code to access available information.
-5. **Inconsistency review:** conflicting records may trigger alerts for further investigation.
-
-> **Important:** a QR Code alone does not prove authenticity. The approach relies on reliable records, access controls and proper event validation.
-
-### Main capabilities
-
-- User authentication;
-- Product registration and management;
-- QR Code-based product identification;
-- Public product lookup;
-- Sales and verification records;
-- User roles and permissions;
-- PostgreSQL persistence through Supabase.
-
-### Technology stack
-
-HTML5 · CSS3 · JavaScript · Supabase Auth · PostgreSQL · Git · GitHub · GitHub Pages.
-
-### Run locally
-
-```bash
-git clone https://github.com/mardenmartins/projeto.s.a.r.a.git
-cd projeto.s.a.r.a
-```
-
-Open `index.html` in a browser or use Visual Studio Code with Live Server. Configure your own Supabase project and security policies before using the application with real data.
-
-### Links
-
-- **Live application:** https://mardenmartins.github.io/projeto.s.a.r.a/
-- **Source code:** https://github.com/mardenmartins/projeto.s.a.r.a
-
-### Academic project
-
-Developed for **5th SENAC INNOVADAY**, Faculdade de Tecnologia e Inovação Senac-DF, Brasília, Brazil, 2026.
-
-### Team
-
-Marden Martins · Raiane Reis · Lucas Cavalcante · Henrique Paixão · Walisson Araújo
-
----
-
 <p align="center">
-  <sub>Projeto acadêmico em evolução · Academic project in progress</sub>
+  <strong>S.A.R.A. — Sistema Automático de Reconhecimento de Autenticidade</strong><br>
+  <sub>Projeto acadêmico em desenvolvimento.</sub>
 </p>
